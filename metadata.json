@@ -1,0 +1,6 @@
+{
+  "name": "Clase Interactiva de Logística e Inventario en Odoo",
+  "description": "Plataforma interactiva para el aprendizaje de logística empresarial y configuración de almacenes en Odoo, con simulador práctico y tutor de IA integrado.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
