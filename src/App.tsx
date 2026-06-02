@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, FormEvent } from "react";
+import React, { useState, useEffect, useRef, FormEvent } from "react";
 import {
   Truck,
   GitCommit,
@@ -130,6 +130,7 @@ export default function App() {
 
   // Hint overlay helper state
   const [showActiveHint, setShowActiveHint] = useState<boolean>(false);
+  const [showOdooConfigDropdown, setShowOdooConfigDropdown] = useState<boolean>(false);
 
   // For Simulator step 3: location creation form
   const [locFormName, setLocFormName] = useState("");
@@ -275,13 +276,23 @@ export default function App() {
   };
 
   // Submit Quiz helper
-  const handleSelectQuizOption = (qId: string, optionIdx: number) => {
+  const handleSelectQuizOption = (e: React.MouseEvent | undefined, qId: string, optionIdx: number) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     setQuizScores(prev => ({ ...prev, [qId]: optionIdx }));
   };
 
-  const handleVerifyQuiz = (qId: string, correctAnswerIdx: number) => {
-    setQuizSubmitted(prev => ({ ...prev, [qId]: true }));
+  const handleVerifyQuiz = (e: React.MouseEvent | undefined, qId: string, correctAnswerIdx: number) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     const selectedIdx = quizScores[qId];
+    if (selectedIdx === undefined) return;
+
+    setQuizSubmitted(prev => ({ ...prev, [qId]: true }));
     if (selectedIdx === correctAnswerIdx) {
       setCompletedQuizzes(prev => ({ ...prev, [qId]: true }));
     }
@@ -744,8 +755,8 @@ export default function App() {
                       <svg className="w-24 h-24 transform -rotate-90">
                         <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="6" className="text-slate-800" fill="transparent" />
                         <circle cx="48" cy="48" r="40" stroke="currentColor" strokeWidth="6" className="text-purple-500 transition-all duration-1000" fill="transparent"
-                          strokeDasharray={2 * Math.PI * 40}
-                          strokeDashoffset={2 * Math.PI * 40 * (1 - quizPassedCount / totalQuizzesCount)}
+                          strokeDasharray={(2 * Math.PI * 40).toFixed(1)}
+                          strokeDashoffset={(2 * Math.PI * 40 * (1 - quizPassedCount / totalQuizzesCount)).toFixed(1)}
                         />
                       </svg>
                       {/* Correct ratio display */}
@@ -1027,9 +1038,10 @@ export default function App() {
 
                               return (
                                 <button
+                                  type="button"
                                   key={optIdx}
                                   disabled={isSubmitted}
-                                  onClick={() => handleSelectQuizOption(q.id, optIdx)}
+                                  onClick={(e) => handleSelectQuizOption(e, q.id, optIdx)}
                                   className={`w-full text-left p-3 rounded-lg border text-xs transition-all flex items-start space-x-2.5 ${btnClass}`}
                                   id={`quiz_opt_${q.id}_${optIdx}`}
                                 >
@@ -1044,11 +1056,12 @@ export default function App() {
                           {!isSubmitted ? (
                             <div className="mt-3 flex justify-end">
                               <button
+                                type="button"
                                 disabled={selectedOptionAndStored === undefined}
-                                onClick={() => handleVerifyQuiz(q.id, q.answerIndex)}
+                                onClick={(e) => handleVerifyQuiz(e, q.id, q.answerIndex)}
                                 className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                                   selectedOptionAndStored !== undefined
-                                    ? "bg-emerald-600 text-white hover:bg-emerald-500 shadow-md"
+                                    ? "bg-emerald-600 text-white hover:bg-emerald-500 shadow-md cursor-pointer"
                                     : "bg-slate-800 text-slate-500 cursor-not-allowed"
                                 }`}
                                 id={`quiz_submit_btn_${q.id}`}
@@ -1427,40 +1440,55 @@ export default function App() {
                       </button>
                       
                       {/* Only configurable if step 2 locations are enabled */}
-                      <div className="relative group">
+                      <div 
+                        className="relative"
+                        onMouseLeave={() => setShowOdooConfigDropdown(false)}
+                      >
                         <button 
-                          className="hover:bg-slate-100 px-2 py-1 rounded font-medium text-slate-700 inline-flex items-center space-x-1"
+                          onClick={() => setShowOdooConfigDropdown(!showOdooConfigDropdown)}
+                          className={`hover:bg-slate-100 px-2 py-1 rounded font-medium inline-flex items-center space-x-1 cursor-pointer transition-colors ${showOdooConfigDropdown ? "bg-slate-100 text-[#714B67]" : "text-slate-700"}`}
                           id="nav_btn_config_dropdown"
                         >
                           <span>Configuración</span>
+                          <span className={`text-[8px] transition-transform duration-200 ${showOdooConfigDropdown ? "rotate-180 text-purple-600" : "text-slate-400"}`}>▼</span>
                         </button>
-                        <div className="absolute left-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-lg hidden group-hover:block z-50 py-1 font-sans">
-                          <button
-                            onClick={() => {
-                              if (simState.settingsActivatedLocations) {
-                                setSimMenuSection("ubicaciones");
-                              } else {
-                                alert("Debes activar 'Ubicaciones de Almacenamiento' en los Ajustes primero (Paso 2).");
-                              }
-                            }}
-                            className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 font-normal block text-slate-700"
+                        
+                        {showOdooConfigDropdown && (
+                          <div 
+                            className="absolute left-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-xl z-50 py-1 font-sans animate-in fade-in duration-100"
+                            id="config_dropdown_content"
                           >
-                            Ubicaciones
-                          </button>
-                          <span className="block border-t border-slate-100 my-1"></span>
-                          <button
-                            onClick={() => {
-                              if (simState.settingsActivatedLocations) {
-                                setSimMenuSection("almacenes");
-                              } else {
-                                alert("Debes activar 'Ubicaciones de Almacenamiento' en los Ajustes primero (Paso 2).");
-                              }
-                            }}
-                            className="w-full text-left px-3 py-2 text-xs hover:bg-slate-50 font-normal block text-slate-700"
-                          >
-                            Almacenes
-                          </button>
-                        </div>
+                            <button
+                              onClick={() => {
+                                setShowOdooConfigDropdown(false);
+                                if (simState.settingsActivatedLocations) {
+                                  setSimMenuSection("ubicaciones");
+                                } else {
+                                  alert("Debes activar 'Ubicaciones de Almacenamiento' en los Ajustes primero (Paso 2).");
+                                }
+                              }}
+                              className="w-full text-left px-3.5 py-2 text-xs hover:bg-slate-50 font-normal block text-slate-700 cursor-pointer hover:text-purple-700 hover:pl-4 transition-all"
+                              id="btn_dropdown_ubicaciones"
+                            >
+                              Ubicaciones
+                            </button>
+                            <span className="block border-t border-slate-100 my-1"></span>
+                            <button
+                              onClick={() => {
+                                setShowOdooConfigDropdown(false);
+                                if (simState.settingsActivatedLocations) {
+                                  setSimMenuSection("almacenes");
+                                } else {
+                                  alert("Debes activar 'Ubicaciones de Almacenamiento' en los Ajustes primero (Paso 2).");
+                                }
+                              }}
+                              className="w-full text-left px-3.5 py-2 text-xs hover:bg-slate-50 font-normal block text-slate-700 cursor-pointer hover:text-purple-700 hover:pl-4 transition-all"
+                              id="btn_dropdown_almacenes"
+                            >
+                              Almacenes
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
 
