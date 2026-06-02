@@ -148,6 +148,39 @@ export default function App() {
   const [prodFormBought, setProdFormBought] = useState(true);
   const [prodValidationMessage, setProdValidationMessage] = useState("");
 
+  // Custom modal dialog state to replace native alert/confirm on mobile platforms
+  const [modal, setModal] = useState<{
+    show: boolean;
+    title: string;
+    message: string;
+    type: "alert" | "confirm";
+    onConfirm?: () => void;
+  }>({
+    show: false,
+    title: "",
+    message: "",
+    type: "alert"
+  });
+
+  const triggerAlert = (title: string, message: string) => {
+    setModal({
+      show: true,
+      title,
+      message,
+      type: "alert"
+    });
+  };
+
+  const triggerConfirm = (title: string, message: string, onConfirm: () => void) => {
+    setModal({
+      show: true,
+      title,
+      message,
+      type: "confirm",
+      onConfirm
+    });
+  };
+
   // Tutor Chat state
   const [chatInput, setChatInput] = useState("");
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
@@ -390,7 +423,10 @@ export default function App() {
       }));
 
       setWhValidationMessage("");
-      alert(`¡Almacén '${cleanName}' [${cleanCode}] creado con éxito! Se han inicializado las ubicaciones '${cleanCode}' y '${cleanCode}/Stock' automáticamente.`);
+      triggerAlert(
+        "¡Almacén creado!",
+        `¡Almacén '${cleanName}' [${cleanCode}] creado con éxito! Se han inicializado las ubicaciones '${cleanCode}' y '${cleanCode}/Stock' automáticamente.`
+      );
       setSimMenuSection("inventario");
     } else {
       let errors = [];
@@ -429,7 +465,10 @@ export default function App() {
 
       setLocValidationMessage("");
       setSimMenuSection("inventario");
-      alert(`¡Ubicación 'Pasillo A' creada correctamente dentro de ${locFormParent}!`);
+      triggerAlert(
+        "¡Ubicación Creada!",
+        `¡Ubicación 'Pasillo A' creada correctamente dentro de ${locFormParent}!`
+      );
     } else {
       let errors = [];
       if (!isPasilloA) errors.push("El nombre de la ubicación debe ser exactamente 'Pasillo A'");
@@ -475,7 +514,10 @@ export default function App() {
 
       setProdValidationMessage("");
       setSimMenuSection("dashboard");
-      alert("¡Producto 'Escritorio de Madera Premium' guardado correctamente!");
+      triggerAlert(
+        "¡Producto Guardado!",
+        "¡Producto 'Escritorio de Madera Premium' guardado correctamente!"
+      );
     } else {
       let errors = [];
       if (!isCorrectName) errors.push("Nombre debe ser 'Escritorio de Madera Premium'");
@@ -488,57 +530,65 @@ export default function App() {
   };
 
   const handleResetSimulator = () => {
-    if (confirm("¿Estás seguro de reiniciar el simulador? Se borrarán el almacén, la ubicación y los productos creados.")) {
-      setSimState({
-        hasLoggedIn: false,
-        settingsActivatedLocations: false,
-        warehouses: [{ id: "wh_main", name: "YourCompany", code: "WH" }],
-        locations: [
-          { id: "loc_wh", name: "WH", parent: "", type: "view" },
-          { id: "loc_stock", name: "Stock", parent: "WH", type: "view" },
-          { id: "loc_virtual_scrap", name: "Scrap", parent: "Virtual Locations", type: "virtual" },
-          { id: "loc_virtual_customers", name: "Customers", parent: "Virtual Locations", type: "virtual" }
-        ],
-        products: [
-          {
-            id: "prod_sample",
-            name: "Clavos de Acero 2mm",
-            storable: false,
-            type: "consumable",
-            category: "All",
-            internalRef: "AUX-CLA-002",
-            price: 2.5,
-            cost: 1.0,
-            canBeSold: true,
-            canBeBought: true
-          }
-        ],
-        activeStep: 0
-      });
-      setSettingsCheckLocations(false);
-      setSettingsSaved(false);
-      setWhFormName("");
-      setWhFormCode("");
-      setWhValidationMessage("");
-      setLocFormName("");
-      setLocFormParent("WH/Stock");
-      setLocFormType("internal");
-      setProdFormName("");
-      setProdFormType("storable");
-      setProdFormRef("");
-      setProdFormPrice(0);
-      setProdFormCost(0);
-      setSimMenuSection("dashboard");
-      setShowActiveHint(false);
-    }
+    triggerConfirm(
+      "¿Reiniciar el simulador?",
+      "¿Estás seguro de reiniciar el simulador? Se borrarán el almacén, la ubicación y los productos creados.",
+      () => {
+        setSimState({
+          hasLoggedIn: false,
+          settingsActivatedLocations: false,
+          warehouses: [{ id: "wh_main", name: "YourCompany", code: "WH" }],
+          locations: [
+            { id: "loc_wh", name: "WH", parent: "", type: "view" },
+            { id: "loc_stock", name: "Stock", parent: "WH", type: "view" },
+            { id: "loc_virtual_scrap", name: "Scrap", parent: "Virtual Locations", type: "virtual" },
+            { id: "loc_virtual_customers", name: "Customers", parent: "Virtual Locations", type: "virtual" }
+          ],
+          products: [
+            {
+              id: "prod_sample",
+              name: "Clavos de Acero 2mm",
+              storable: false,
+              type: "consumable",
+              category: "All",
+              internalRef: "AUX-CLA-002",
+              price: 2.5,
+              cost: 1.0,
+              canBeSold: true,
+              canBeBought: true
+            }
+          ],
+          activeStep: 0
+        });
+        setSettingsCheckLocations(false);
+        setSettingsSaved(false);
+        setWhFormName("");
+        setWhFormCode("");
+        setWhValidationMessage("");
+        setLocFormName("");
+        setLocFormParent("WH/Stock");
+        setLocFormType("internal");
+        setProdFormName("");
+        setProdFormType("storable");
+        setProdFormRef("");
+        setProdFormPrice(0);
+        setProdFormCost(0);
+        setSimMenuSection("dashboard");
+        setShowActiveHint(false);
+      }
+    );
   };
 
   const handleResetQuizzes = () => {
-    if (confirm("¿Estás seguro de reiniciar todas las respuestas de los mini-quizzes? Podrás realizarlos nuevamente para mejorar tu calificación.")) {
-      setQuizScores({});
-      setQuizSubmitted({});
-      setCompletedQuizzes({});
-    }
+    triggerConfirm(
+      "¿Reiniciar Quizzes?",
+      "¿Estás seguro de reiniciar todas las respuestas de los mini-quizzes? Podrás realizarlos nuevamente para mejorar tu calificación.",
+      () => {
+        setQuizScores({});
+        setQuizSubmitted({});
+        setCompletedQuizzes({});
+      }
+    );
   };
 
   // Stats
@@ -1464,7 +1514,10 @@ export default function App() {
                                 if (simState.settingsActivatedLocations) {
                                   setSimMenuSection("ubicaciones");
                                 } else {
-                                  alert("Debes activar 'Ubicaciones de Almacenamiento' en los Ajustes primero (Paso 2).");
+                                  triggerAlert(
+                                    "Ajustes Requeridos",
+                                    "Debes activar 'Ubicaciones de Almacenamiento' en los Ajustes primero (Paso 2) para poder acceder al módulo de Ubicaciones."
+                                  );
                                 }
                               }}
                               className="w-full text-left px-3.5 py-2 text-xs hover:bg-slate-50 font-normal block text-slate-700 cursor-pointer hover:text-purple-700 hover:pl-4 transition-all"
@@ -1479,7 +1532,10 @@ export default function App() {
                                 if (simState.settingsActivatedLocations) {
                                   setSimMenuSection("almacenes");
                                 } else {
-                                  alert("Debes activar 'Ubicaciones de Almacenamiento' en los Ajustes primero (Paso 2).");
+                                  triggerAlert(
+                                    "Ajustes Requeridos",
+                                    "Debes activar 'Ubicaciones de Almacenamiento' en los Ajustes primero (Paso 2) para poder acceder al módulo de Almacenes."
+                                  );
                                 }
                               }}
                               className="w-full text-left px-3.5 py-2 text-xs hover:bg-slate-50 font-normal block text-slate-700 cursor-pointer hover:text-purple-700 hover:pl-4 transition-all"
@@ -1764,7 +1820,10 @@ export default function App() {
                               if (simState.settingsActivatedLocations) {
                                 setSimMenuSection("ubicaciones");
                               } else {
-                                alert("Debes habilitar 'Ubicaciones de Almacenamiento' en los Ajustes primero.");
+                                triggerAlert(
+                                  "Ubicaciones Desactivadas",
+                                  "Debes habilitar 'Ubicaciones de Almacenamiento' en los Ajustes primero (Paso 2) antes de poder ver las ubicaciones."
+                                );
                               }
                             }}
                             className="bg-slate-200 hover:bg-slate-300 border border-slate-300 text-slate-800 font-semibold px-2.5 py-1 rounded text-xs transition-colors"
@@ -2431,16 +2490,20 @@ export default function App() {
               <div className="flex space-x-1.5">
                 <button
                   onClick={() => {
-                    if (confirm("¿Limpiar todo el historial del chat con el tutor?")) {
-                      setChatMessages([
-                        {
-                          id: "welcome",
-                          role: "model",
-                          text: "Claro, he restablecido nuestra sesión. ¿En qué te ayudo con la materia de Odoo o Logística para la clase 1?",
-                          timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                        }
-                      ]);
-                    }
+                    triggerConfirm(
+                      "¿Limpiar chat?",
+                      "¿Limpiar todo el historial del chat con el tutor?",
+                      () => {
+                        setChatMessages([
+                          {
+                            id: "welcome",
+                            role: "model",
+                            text: "Claro, he restablecido nuestra sesión. ¿En qué te ayudo con la materia de Odoo o Logística para la clase 1?",
+                            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                          }
+                        ]);
+                      }
+                    );
                   }}
                   className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors border border-slate-700/50"
                   title="Restablecer chat"
@@ -2612,6 +2675,47 @@ export default function App() {
         )}
 
       </main>
+
+      {/* CUSTOM POPUP DIALOG (REPLACES NATIVE alert / confirm TO PREVENT CHROMIUM/IFRAME MOBILE BLANK SCREEN CRASHES) */}
+      {modal.show && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]" id="custom_dialog_overlay" onClick={() => setModal(prev => ({ ...prev, show: false }))}>
+          <div className="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 max-w-sm w-full shadow-2xl relative space-y-4 font-sans" id="custom_dialog_body" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20 shrink-0">
+                <Sparkles className="w-5 h-5 text-purple-400" />
+              </div>
+              <div className="space-y-1 my-auto">
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">{modal.title}</h3>
+                <p className="text-xs text-slate-300 leading-relaxed font-sans">{modal.message}</p>
+              </div>
+            </div>
+            
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-800/60">
+              {modal.type === "confirm" && (
+                <button
+                  type="button"
+                  onClick={() => setModal(prev => ({ ...prev, show: false }))}
+                  className="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all cursor-pointer"
+                  id="dialog_cancel_btn"
+                >
+                  Cancelar
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  setModal(prev => ({ ...prev, show: false }));
+                  if (modal.onConfirm) modal.onConfirm();
+                }}
+                className="px-4 py-2 rounded-lg text-xs font-semibold bg-purple-600 hover:bg-purple-500 text-white shadow-md shadow-purple-600/10 transition-all cursor-pointer"
+                id="dialog_ok_btn"
+              >
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );
