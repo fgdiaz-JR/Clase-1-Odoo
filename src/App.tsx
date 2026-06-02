@@ -72,6 +72,7 @@ const simulatorHints = [
 export default function App() {
   // Navigation Tabs
   const [activeTab, setActiveTab] = useState<"teoria" | "simulador">("teoria");
+  const [showTutorChat, setShowTutorChat] = useState<boolean>(true);
   
   // Lesson state
   const [currentLessonIndex, setCurrentLessonIndex] = useState<number>(0);
@@ -166,6 +167,11 @@ export default function App() {
   const [chatError, setChatError] = useState("");
   
   const chatEndRef = useRef<HTMLDivElement>(null);
+
+  // Synchronize browser tab title for Clase 1
+  useEffect(() => {
+    document.title = "Clase 1: Introducción a la Logística y al Módulo de Inventario - Odoo WMS";
+  }, []);
 
   // Auto-saved chat to localStorage
   useEffect(() => {
@@ -555,13 +561,16 @@ export default function App() {
               <Layers className="w-6 h-6 animate-pulse" />
             </div>
             <div>
-              <h1 className="text-lg md:text-xl font-bold tracking-tight text-white flex items-center gap-2">
+              <h1 className="text-base sm:text-lg md:text-xl font-bold tracking-tight text-white flex flex-wrap items-center gap-1.5 sm:gap-2">
                 Odoo WMS Clase Interactiva
-                <span className="text-xs bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2.5 py-0.5 rounded-full font-semibold">
+                <span className="text-[11px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full font-bold">
+                  Clase 1
+                </span>
+                <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 sm:px-2.5 py-0.5 rounded-full font-semibold">
                   Logística Básica
                 </span>
               </h1>
-              <p className="text-xs text-slate-400">
+              <p className="text-[11px] sm:text-xs text-slate-400 leading-tight mt-0.5">
                 Curso: Logística con Odoo WMS (Clase 1: Introducción a la Logística y al Módulo de Inventario)
               </p>
             </div>
@@ -599,33 +608,49 @@ export default function App() {
           </div>
 
           {/* Main Module Switch Header Tabs */}
-          <div className="flex space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800/80" id="tab_toggle_section">
+          <div className="flex flex-wrap items-center gap-2" id="tab_toggle_container">
+            <div className="flex space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800/80" id="tab_toggle_section">
+              <button
+                onClick={() => setActiveTab("teoria")}
+                className={`flex items-center space-x-2 px-3 py-1.5 sm:px-3.5 sm:py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all ${
+                  activeTab === "teoria"
+                    ? "bg-purple-600 text-white shadow-md shadow-purple-600/10"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                }`}
+                id="btn_tab_teoria"
+              >
+                <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>1. Temario</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("simulador")}
+                className={`flex items-center space-x-2 px-3 py-1.5 sm:px-3.5 sm:py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all ${
+                  activeTab === "simulador"
+                    ? "bg-purple-600 text-white shadow-md shadow-purple-600/10"
+                    : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+                }`}
+                id="btn_tab_simulador"
+              >
+                <Compass className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span>2. Simulador</span>
+                {simStepsCompleted < 5 && (
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                )}
+              </button>
+            </div>
+
             <button
-              onClick={() => setActiveTab("teoria")}
-              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all ${
-                activeTab === "teoria"
-                  ? "bg-purple-600 text-white shadow-md shadow-purple-600/10"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
+              onClick={() => setShowTutorChat(!showTutorChat)}
+              className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all shadow-md ${
+                showTutorChat
+                  ? "bg-purple-900/30 text-purple-300 border border-purple-500/30 hover:bg-purple-900/50"
+                  : "bg-slate-950 text-slate-400 border border-slate-800/80 hover:text-slate-200 hover:bg-slate-900"
               }`}
-              id="btn_tab_teoria"
+              id="btn_toggle_tutor"
+              title="Mostrar u ocultar el Consultor IA"
             >
-              <BookOpen className="w-4 h-4" />
-              <span>1. Estudiar Temario</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("simulador")}
-              className={`flex items-center space-x-2 px-3.5 py-1.5 rounded-lg text-xs md:text-sm font-medium transition-all ${
-                activeTab === "simulador"
-                  ? "bg-purple-600 text-white shadow-md shadow-purple-600/10"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
-              }`}
-              id="btn_tab_simulador"
-            >
-              <Compass className="w-4 h-4" />
-              <span>2. Simulador Práctico</span>
-              {simStepsCompleted < 5 && (
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
-              )}
+              <Sparkles className="w-3.5 h-3.5 text-purple-400 animate-pulse" />
+              <span>{showTutorChat ? "Ocultar Tutor" : "Preguntar al Tutor"}</span>
             </button>
           </div>
 
@@ -635,8 +660,8 @@ export default function App() {
       {/* THREE-COLUMN LAYOUT OR SPLIT LAYOUT */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-5" id="main_columns_container">
         
-        {/* LEFT COLUMN/S - MAIN CONTENT AREA (Takes 8 cols) */}
-        <section className="lg:col-span-8 flex flex-col space-y-4" id="main_content_area">
+        {/* LEFT COLUMN/S - MAIN CONTENT AREA */}
+        <section className={`flex flex-col space-y-4 transition-all duration-300 ${showTutorChat ? "lg:col-span-8" : "lg:col-span-12"}`} id="main_content_area">
           
           {/* TAB 1: TEORIA O TEMARIO */}
           {activeTab === "teoria" && (
@@ -2356,7 +2381,8 @@ export default function App() {
         </section>
 
         {/* RIGHT COLUMN - virtual tutor chat (takes 4 cols) */}
-        <section className="lg:col-span-4 flex flex-col h-[calc(100vh-140px)] min-h-[500px]" id="tutor_chat_area">
+        {showTutorChat && (
+          <section className="lg:col-span-4 flex flex-col h-[calc(100vh-140px)] min-h-[500px]" id="tutor_chat_area">
           <div className="bg-slate-800/90 border border-slate-700/60 rounded-2xl flex-1 flex flex-col overflow-hidden shadow-xl" id="chat_panel">
             
             {/* Header chat block */}
@@ -2555,6 +2581,7 @@ export default function App() {
 
           </div>
         </section>
+        )}
 
       </main>
 
