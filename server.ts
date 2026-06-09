@@ -7,7 +7,7 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 app.use(express.json());
 
@@ -47,10 +47,52 @@ app.post("/api/gemini/chat", async (req, res) => {
       return;
     }
 
-    // Verify key existence before calling SDK
+    // Check if an external Agent URL is configured (e.g. deployed on Cloud Run)
+    const agentUrl = process.env.AGENT_URL || process.env.CHONTO_BOT_URL || process.env.CLOUDRUN_AGENT_URL || process.env.BOT_URL || process.env.EXTERNAL_AGENT_URL;
+
+    if (agentUrl) {
+      console.log(`Forwarding request to cloud run agent: ${agentUrl}`);
+      try {
+        const externalRes = await fetch(agentUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message, history, classId })
+        });
+
+        if (!externalRes.ok) {
+          throw new Error(`El agente de Cloud Run respondió con código de estado ${externalRes.status}`);
+        }
+
+        const responseText = await externalRes.text();
+        let responseData;
+        try {
+          responseData = JSON.parse(responseText);
+        } catch (e) {
+          responseData = null;
+        }
+
+        let botResponse = "";
+        if (responseData && typeof responseData === "object") {
+          botResponse = responseData.response || responseData.text || responseData.message || responseData.reply || responseData.content || JSON.stringify(responseData);
+        } else {
+          botResponse = responseText;
+        }
+
+        res.json({ response: botResponse });
+        return;
+      } catch (fetchError: any) {
+        console.error("Error connecting to external cloud run url:", fetchError);
+        res.status(502).json({
+          error: `Error al conectar con el Agente de Cloud Run: ${fetchError.message}`
+        });
+        return;
+      }
+    }
+
+    // Fallback: Verify key existence before calling direct Gemini API SDK
     if (!process.env.GEMINI_API_KEY) {
       res.status(403).json({
-        error: "Falta configurar la clave API (GEMINI_API_KEY) en los Secretos de AI Studio para usar el tutor de IA.",
+        error: "Falta configurar la clave API (GEMINI_API_KEY) o la URL del Agente (AGENT_URL) en las variables de entorno de tu contenedor o los Secretos para usar el tutor de IA.",
         isDemoMode: true
       });
       return;
