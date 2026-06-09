@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Copy package and lock files to run high-performance cache installations
 COPY package*.json ./
-RUN npm ci
+RUN npm install --only=production
 
 # Copy the rest of the source code
 COPY . .
