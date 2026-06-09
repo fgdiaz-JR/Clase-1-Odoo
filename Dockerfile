@@ -5,6 +5,7 @@ WORKDIR /app
 
 # Copy package and lock files to run high-performance cache installations
 COPY package*.json ./
+# Cambiado a install tradicional para evitar la exigencia del lockfile
 RUN npm install --only=production
 
 # Copy the rest of the source code
@@ -25,8 +26,8 @@ ENV PORT=3000
 # Copy package descriptors for production install
 COPY package*.json ./
 
-# Install only production dependencies (excludes development devDependencies)
-RUN npm ci --omit=dev
+# ¡CORREGIDO AQUÍ!: Reemplazado 'npm ci --omit=dev' por 'npm install' optimizado para producción
+RUN npm install --production --omit=dev
 
 # Copy compiled folders from build stage
 COPY --from=builder /app/dist ./dist
