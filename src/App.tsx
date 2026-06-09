@@ -12,6 +12,7 @@ import {
   X,
   ChevronRight,
   ChevronLeft,
+  ArrowLeft,
   Send,
   Database,
   MapPin,
@@ -28,6 +29,7 @@ import {
   Warehouse
 } from "lucide-react";
 import { lessonsData } from "./data/lessons";
+import { lessonsClass2Data } from "./data/lessonsClass2";
 import { Lesson, OdooLocation, OdooProduct, ChatMessage, SimulatorState } from "./types";
 
 const simulatorHints = [
@@ -71,6 +73,7 @@ const simulatorHints = [
 
 export default function App() {
   // Navigation Tabs
+  const [currentClass, setCurrentClass] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"teoria" | "simulador">("teoria");
   const [showTutorChat, setShowTutorChat] = useState<boolean>(true);
   
@@ -82,6 +85,21 @@ export default function App() {
   const [completedLessons, setCompletedLessons] = useState<{ [key: number]: boolean }>({});
   const [studentCertName, setStudentCertName] = useState("Estudiante de Logística");
   const [showCertificate, setShowCertificate] = useState(false);
+
+  // Simulator Class 2 State
+  const [sim2State, setSim2State] = useState<any>({
+    step: 1, // 1 to 5
+    receptionContact: "",
+    receptionProduct: "",
+    receptionDemand: 0,
+    receptionValidated: false,
+    receptionDone: false,
+    onHandQuantity: 0,
+    forecastedQuantity: 0,
+    adjustmentRealCount: 20,
+    adjustmentApplied: false,
+    menuSection: "dashboard"
+  });
 
   // Simulator state
   const [simState, setSimState] = useState<SimulatorState>({
@@ -183,13 +201,13 @@ export default function App() {
 
   // Tutor Chat state
   const [chatInput, setChatInput] = useState("");
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(() => {
-    const saved = localStorage.getItem("odoo_lessons_chat");
+  const [chatMessagesClass1, setChatMessagesClass1] = useState<ChatMessage[]>(() => {
+    const saved = localStorage.getItem("odoo_lessons_chat_1");
     return saved ? JSON.parse(saved) : [
       {
         id: "welcome",
         role: "model",
-        text: "¡Hola! Soy tu **Tutor de Odoo y Logística**. Te daré soporte en esta clase introductoria.\n\n" +
+        text: "¡Hola! Soy tu **Tutor de Odoo y Logística**. Te daré soporte en esta clase introductoria de la **Clase 1**.\n\n" +
           "Puedo explicarte los conceptos de las **5 R's**, los **flujos progresivos y regresivos**, " +
           "el **inventario de partida doble en Odoo**, o ayudarte paso a paso con la actividad práctica.\n\n" +
           "¿En qué te puedo asesorar hoy?",
@@ -197,20 +215,61 @@ export default function App() {
       }
     ];
   });
+
+  const [chatMessagesClass2, setChatMessagesClass2] = useState<ChatMessage[]>(() => {
+    const saved = localStorage.getItem("odoo_lessons_chat_2");
+    return saved ? JSON.parse(saved) : [
+      {
+        id: "welcome",
+        role: "model",
+        text: "¡Hola! Bienvenido a la **Clase 2: Gestión de Inventarios y Control de Existencias**.\n\n" +
+          "Aquí repasaremos los tipos de inventarios, la partida doble física de Odoo, recepciones, entregas, mermas, ajustes de control y auditorías.\n\n" +
+          "Dime, ¿estás listo para empezar o tienes alguna duda sobre la teoría de la gestión de existencias?",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ];
+  });
+
+  const chatMessages = currentClass === 2 ? chatMessagesClass2 : chatMessagesClass1;
+  const setChatMessages = (updater: any) => {
+    if (currentClass === 2) {
+      setChatMessagesClass2(updater);
+    } else {
+      setChatMessagesClass1(updater);
+    }
+  };
+
+  // Sync to separate localStorage keys
+  useEffect(() => {
+    if (chatMessagesClass1.length > 0) {
+      localStorage.setItem("odoo_lessons_chat_1", JSON.stringify(chatMessagesClass1));
+    }
+  }, [chatMessagesClass1]);
+
+  useEffect(() => {
+    if (chatMessagesClass2.length > 0) {
+      localStorage.setItem("odoo_lessons_chat_2", JSON.stringify(chatMessagesClass2));
+    }
+  }, [chatMessagesClass2]);
+
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [chatError, setChatError] = useState("");
   
   const chatEndRef = useRef<HTMLDivElement>(null);
 
-  // Synchronize browser tab title for Clase 1
-  useEffect(() => {
-    document.title = "Clase 1: Introducción a la Logística y al Módulo de Inventario - Odoo WMS";
-  }, []);
+  // Dynamically resolve lessons for the active class
+  const lessonsList = currentClass === 2 ? lessonsClass2Data : lessonsData;
 
-  // Auto-saved chat to localStorage
+  // Synchronize browser tab title for Clase
   useEffect(() => {
-    localStorage.setItem("odoo_lessons_chat", JSON.stringify(chatMessages));
-  }, [chatMessages]);
+    if (currentClass === 1) {
+      document.title = "Clase 1: Introducción a la Logística y al Módulo de Inventario - Odoo WMS";
+    } else if (currentClass === 2) {
+      document.title = "Clase 2: Gestión de Inventarios y Control de Existencias - Odoo WMS";
+    } else {
+      document.title = "Logística y Almacenes con Odoo WMS - Portal Académico";
+    }
+  }, [currentClass]);
 
   // Scroll chat to bottom
   useEffect(() => {
@@ -218,7 +277,7 @@ export default function App() {
   }, [chatMessages, isChatLoading]);
 
   // Get current active lesson
-  const currentLesson: Lesson = lessonsData[currentLessonIndex];
+  const currentLesson: Lesson = lessonsList[currentLessonIndex] || lessonsList[0];
 
   // Map icon name to React element
   const getIcon = (name: string, className = "w-5 h-5") => {
@@ -591,23 +650,323 @@ export default function App() {
     );
   };
 
-  // Stats
-  const totalLessonsCount = lessonsData.length;
-  const lessonsReadCount = Object.keys(completedLessons).length;
+  // Stats for the active class (dynamically computed)
+  const totalLessonsCount = lessonsList.length;
+  const lessonsReadCount = lessonsList.filter(l => completedLessons[l.id]).length;
   
-  const totalQuizzesCount = lessonsData.reduce((acc, l) => acc + l.quiz.length, 0);
-  const quizPassedCount = Object.keys(completedQuizzes).length;
+  const totalQuizzesCount = lessonsList.reduce((acc, l) => acc + l.quiz.length, 0);
+  const quizPassedCount = lessonsList.reduce((acc, l) => {
+    return acc + l.quiz.filter(q => completedQuizzes[q.id]).length;
+  }, 0);
 
-  const simStepsCompleted = simState.activeStep; // 0, 1, 2, 3, 4, 5 represents steps achieved
+  const simStepsCompleted = currentClass === 2 
+    ? (sim2State.step === 5 ? 4 : sim2State.step - 1)
+    : simState.activeStep;
+
+  const maxSimSteps = currentClass === 2 ? 4 : 5;
 
   const overallProgressPercent = Math.min(
     100,
     Math.round(
-      ((lessonsReadCount / totalLessonsCount) * 40) +
-      ((quizPassedCount / totalQuizzesCount) * 30) +
-      ((simState.activeStep / 5) * 30)
+      ((lessonsReadCount / (totalLessonsCount || 1)) * 40) +
+      ((quizPassedCount / (totalQuizzesCount || 1)) * 30) +
+      ((simStepsCompleted / maxSimSteps) * 30)
     )
   );
+
+  if (currentClass === null) {
+    const readClass1Count = [1, 2, 3, 4, 5, 6, 7].filter(id => completedLessons[id]).length;
+    const quizClass1PassedCount = ["q1_1", "q1_2", "q2_1", "q2_2", "q3_1", "q4_1", "q4_2", "q5_1", "q6_1", "q6_2", "q7_1", "q7_2"].filter(id => completedQuizzes[id]).length;
+    const class1ProgressPercent = Math.min(100, Math.round(
+      ((readClass1Count / 7) * 40) +
+      ((quizClass1PassedCount / 12) * 30) +
+      ((simState.activeStep / 5) * 30)
+    ));
+
+    const readClass2Count = [101, 102, 103, 104, 105].filter(id => completedLessons[id]).length;
+    const quizClass2PassedCount = ["q2_101_1", "q2_102_1", "q2_103_1", "q2_104_1", "q2_105_1"].filter(id => completedQuizzes[id]).length;
+    const sim2CompletedCount = sim2State.step === 5 ? 4 : sim2State.step - 1;
+    const class2ProgressPercent = Math.min(100, Math.round(
+      ((readClass2Count / 5) * 40) +
+      ((quizClass2PassedCount / 5) * 30) +
+      ((sim2CompletedCount / 4) * 30)
+    ));
+
+    return (
+      <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white" id="portal_container">
+        {/* Portal Header */}
+        <header className="border-b border-slate-800 bg-slate-900 px-4 py-5 shadow-lg relative overflow-hidden" id="portal_header">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl pointer-events-none"></div>
+          
+          <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 relative z-10">
+            <div className="flex items-center space-x-4">
+              <div className="bg-purple-600 p-3.5 rounded-xl text-white shadow-xl shadow-purple-900/30 flex items-center justify-center">
+                <Layers className="w-8 h-8 animate-pulse" />
+              </div>
+              <div className="space-y-1">
+                <h1 className="text-xl md:text-2xl font-black tracking-tight text-white uppercase font-sans">
+                  Academia Odoo WMS & Logística
+                </h1>
+                <p className="text-xs md:text-sm text-slate-400">
+                  Portal de Entrenamiento Interactivo para la Gestión Profesional de Almacenes
+                </p>
+              </div>
+            </div>
+            
+            <div className="bg-slate-800/80 border border-slate-700/60 rounded-2xl px-5 py-3 flex items-center space-x-4 shrink-0 shadow-lg">
+              <div className="text-right">
+                <span className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Tu Progreso Global</span>
+                <span className="text-xl font-bold text-white font-mono">
+                  {Math.round((class1ProgressPercent + class2ProgressPercent) / 2)}%
+                </span>
+              </div>
+              <div className="w-10 h-10 bg-purple-500/10 rounded-xl border border-purple-500/20 flex items-center justify-center">
+                <Award className="w-5 h-5 text-purple-400" />
+              </div>
+            </div>
+          </div>
+        </header>
+
+        {/* Portal Home Content */}
+        <main className="flex-1 max-w-6xl w-full mx-auto p-6 md:p-8 space-y-8 relative z-10" id="portal_main">
+          
+          {/* Welcome Banner */}
+          <section className="bg-gradient-to-r from-purple-900/40 via-slate-850 to-slate-900 rounded-3xl border border-purple-500/20 p-6 md:p-8 shadow-2xl relative overflow-hidden" id="portal_welcome">
+            <div className="absolute top-1/2 right-10 -translate-y-1/2 opacity-10 pointer-events-none hidden md:block">
+              <Truck className="w-64 h-64 text-purple-500" />
+            </div>
+            <div className="space-y-3 max-w-2xl relative z-10">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-purple-500/10 text-purple-400 text-xs font-bold rounded-full border border-purple-500/20">
+                <Sparkles className="w-3.5 h-3.5" /> Plan de Estudio 2026
+              </span>
+              <h2 className="text-xl md:text-3xl font-bold tracking-tight text-white font-sans">Welcome to your Odoo WMS Course</h2>
+              <p className="text-xs md:text-sm text-slate-300 leading-relaxed font-sans">
+                Explora cada una de las clases interactivas para dominar el inventario, el reabastecimiento mínimo y las rutas avanzadas de control. Cada clase cuenta con su propio temario de lectura, tests evaluativos con certificado de honor digital y un moderno simulador interactivo de Odoo WMS pre-configurado para que pongas en práctica la teoría de inmediato.
+              </p>
+            </div>
+          </section>
+
+          {/* Classes Grid */}
+          <section className="space-y-4" id="portal_classes_section">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">Clases del Curso</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6" id="classes_grid">
+              
+              {/* CLASE 1 */}
+              <div className="bg-slate-950/60 rounded-3xl border border-slate-800/80 hover:border-purple-500/30 transition-all p-6 relative flex flex-col justify-between group shadow-xl" id="class_card_1">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold tracking-widest text-purple-400 uppercase font-sans">Clase 1</span>
+                    <span className="bg-purple-500/10 text-purple-400 border border-purple-500/20 text-[10px] font-bold px-2.5 py-0.5 rounded-full">Activa</span>
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-md font-bold text-white group-hover:text-purple-300 transition-colors font-sans">1. Introducción a la Logística y al Módulo de Inventario</h4>
+                    <p className="text-xs text-slate-400 leading-relaxed font-sans mt-1">
+                      Domina los fundamentos de la cadena de suministro, las 5 R's de la logística, y configura en el simulador un Almacén Central (AC), ubicaciones en cascada y productos con ficha storable.
+                    </p>
+                  </div>
+
+                  {/* Metrics progress bar */}
+                  <div className="bg-slate-900 border border-slate-800/60 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="text-slate-500">Completado:</span>
+                      <span className="text-white font-bold">{class1ProgressPercent}%</span>
+                    </div>
+                    <div className="bg-slate-850 rounded-full h-2 overflow-hidden w-full">
+                      <div className="bg-purple-600 h-full rounded-full transition-all" style={{ width: `${class1ProgressPercent}%` }}></div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 pt-1 text-[10px] text-center font-mono">
+                      <div>
+                        <span className="block text-[9px] text-slate-500 uppercase font-bold">Teoría</span>
+                        <span className="text-slate-300">{readClass1Count}/7</span>
+                      </div>
+                      <div>
+                        <span className="block text-[9px] text-slate-500 uppercase font-bold">Quizzes</span>
+                        <span className="text-slate-300">{quizClass1PassedCount}/12</span>
+                      </div>
+                      <div>
+                        <span className="block text-[9px] text-slate-500 uppercase font-bold">Práctica</span>
+                        <span className="text-slate-300">{simState.activeStep}/5</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setCurrentClass(1);
+                    setCurrentLessonIndex(0);
+                    setActiveTab("teoria");
+                  }}
+                  className="mt-6 w-full bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition-all shadow-lg hover:shadow-purple-600/15 text-center flex items-center justify-center gap-2 cursor-pointer"
+                  id="btn_enter_class_1"
+                >
+                  <span>{class1ProgressPercent > 0 ? "Reanudar Clase 1" : "Iniciar Clase 1"}</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* CLASE 2 */}
+              <div className="bg-slate-950/60 rounded-3xl border border-slate-800/80 hover:border-blue-500/30 transition-all p-6 relative flex flex-col justify-between group shadow-xl" id="class_card_2">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold tracking-widest text-blue-400 uppercase font-sans">Clase 2</span>
+                    <span className="bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-bold px-2.5 py-0.5 rounded-full">Activa</span>
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-md font-bold text-white group-hover:text-blue-300 transition-colors font-sans">2. Gestión de Inventarios y Control de Existencias</h4>
+                    <p className="text-xs text-slate-400 leading-relaxed font-sans mt-1">
+                      Aprende el inventario perpetuo de Odoo, la partida doble logística, registra entradas de mercancía manuales, procesa mermas por rotura de stock y audita movimientos de inventario.
+                    </p>
+                  </div>
+
+                  {/* Metrics progress bar */}
+                  <div className="bg-slate-900 border border-slate-800/60 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="text-slate-500">Completado:</span>
+                      <span className="text-white font-bold">{class2ProgressPercent}%</span>
+                    </div>
+                    <div className="bg-slate-850 rounded-full h-2 overflow-hidden w-full">
+                      <div className="bg-blue-600 h-full rounded-full transition-all" style={{ width: `${class2ProgressPercent}%` }}></div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 pt-1 text-[10px] text-center font-mono">
+                      <div>
+                        <span className="block text-[9px] text-slate-500 uppercase font-bold">Teoría</span>
+                        <span className="text-slate-300">{readClass2Count}/5</span>
+                      </div>
+                      <div>
+                        <span className="block text-[9px] text-slate-500 uppercase font-bold">Quizzes</span>
+                        <span className="text-slate-300">{quizClass2PassedCount}/5</span>
+                      </div>
+                      <div>
+                        <span className="block text-[9px] text-slate-500 uppercase font-bold">Práctica</span>
+                        <span className="text-slate-300">{sim2CompletedCount}/4</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setCurrentClass(2);
+                    setCurrentLessonIndex(0);
+                    setActiveTab("teoria");
+                  }}
+                  className="mt-6 w-full bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition-all shadow-lg hover:shadow-blue-600/15 text-center flex items-center justify-center gap-2 cursor-pointer"
+                  id="btn_enter_class_2"
+                >
+                  <span>{class2ProgressPercent > 0 ? "Reanudar Clase 2" : "Iniciar Clase 2"}</span>
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* CLASE 3 - locked */}
+              <div className="bg-slate-950/20 border border-slate-800/40 rounded-3xl p-6 relative flex flex-col justify-between opacity-60 filter grayscale-[20%]" id="class_card_3">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold tracking-widest text-slate-500 uppercase font-sans">Clase 3</span>
+                    <span className="bg-slate-800 text-slate-400 border border-slate-700/50 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <Lock className="w-3 h-3" /> Próximamente
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-md font-bold text-slate-300 font-sans">3. Gestión de Abastecimiento y Compras</h4>
+                    <p className="text-xs text-slate-500 leading-relaxed font-sans">
+                      Aprende a prever demandas, configurar reglas automáticas de reordenación de stock para activar auto-compras sin intervención humana, y recibir de cara al proveedor.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  disabled
+                  className="mt-6 w-full bg-slate-800 text-slate-500 font-bold text-xs py-3 px-4 rounded-xl cursor-not-allowed text-center flex items-center justify-center gap-2 border border-slate-800"
+                  id="btn_enter_class_3"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Módulo Bloqueado</span>
+                </button>
+              </div>
+
+              {/* CLASE 4 - locked */}
+              <div className="bg-slate-950/20 border border-slate-800/40 rounded-3xl p-6 relative flex flex-col justify-between opacity-60 filter grayscale-[20%]" id="class_card_4">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold tracking-widest text-slate-500 uppercase font-sans">Clase 4</span>
+                    <span className="bg-slate-800 text-slate-400 border border-slate-700/50 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <Lock className="w-3 h-3" /> Próximamente
+                    </span>
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-md font-bold text-slate-300 font-sans">4. Control de Calidad y Despachos Avanzados</h4>
+                    <p className="text-xs text-slate-500 leading-relaxed font-sans">
+                      Domina mermas y ruteos logísticos complejos como el flujo en 3 pasos: Entrada + Inspección Física + Almacenado final, y despachos certificados por control de calidad.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  disabled
+                  className="mt-6 w-full bg-slate-800 text-slate-500 font-bold text-xs py-3 px-4 rounded-xl cursor-not-allowed text-center flex items-center justify-center gap-2 border border-slate-800"
+                  id="btn_enter_class_4"
+                >
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Módulo Bloqueado</span>
+                </button>
+              </div>
+
+            </div>
+          </section>
+        </main>
+
+        <footer className="border-t border-slate-800/80 bg-slate-950/40 py-6 text-center text-xs text-slate-500 font-mono" id="portal_footer">
+          <div>Academia Odoo WMS • © 2026 Plataforma Educativa Interactiva</div>
+        </footer>
+
+        {/* CUSTOM POPUP DIALOG */}
+        {modal.show && (
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-[9999]" id="custom_dialog_overlay" onClick={() => setModal(prev => ({ ...prev, show: false }))}>
+            <div className="bg-slate-900 border border-slate-800/80 rounded-2xl p-6 max-w-sm w-full shadow-2xl relative space-y-4 font-sans" id="custom_dialog_body" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-purple-500/10 text-purple-400 rounded-xl border border-purple-500/20 shrink-0">
+                  <Sparkles className="w-5 h-5 text-purple-400" />
+                </div>
+                <div className="space-y-1 my-auto">
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">{modal.title}</h3>
+                  <p className="text-xs text-slate-300 leading-relaxed font-sans">{modal.message}</p>
+                </div>
+              </div>
+              
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-800/60">
+                {modal.type === "confirm" && (
+                  <button
+                    type="button"
+                    onClick={() => setModal(prev => ({ ...prev, show: false }))}
+                    className="px-4 py-2 rounded-lg text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all cursor-pointer"
+                    id="dialog_cancel_btn"
+                  >
+                    Cancelar
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModal(prev => ({ ...prev, show: false }));
+                    if (modal.onConfirm) modal.onConfirm();
+                  }}
+                  className="px-4 py-2 rounded-lg text-xs font-semibold bg-purple-600 hover:bg-purple-500 text-white shadow-md shadow-purple-600/10 transition-all cursor-pointer"
+                  id="dialog_ok_btn"
+                >
+                  Aceptar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  const passingScoreThreshold = currentClass === 2 ? 3 : 6;
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white" id="main_container">
@@ -616,23 +975,34 @@ export default function App() {
       <header className="border-b border-slate-800 bg-slate-900 sticky top-0 z-40 px-4 py-3 shadow-md" id="header_section">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           
-          {/* Logo & Course Info */}
+          {/* Logo, Back Button & Course Info */}
           <div className="flex items-center space-x-3" id="logo_container">
-            <div className="bg-purple-600 p-2.5 rounded-lg text-white shadow-lg shadow-purple-900/30 flex items-center justify-center">
+            <button
+              onClick={() => setCurrentClass(null)}
+              className="mr-1 hover:bg-slate-800 p-2.5 rounded-xl text-slate-400 hover:text-white transition-colors flex items-center gap-1.5 border border-slate-800/60"
+              title="Volver a la selección de clases"
+              id="back_to_selection_btn"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span className="text-xs font-bold hidden sm:inline">Portal</span>
+            </button>
+            <div className={`p-2.5 rounded-lg text-white shadow-lg flex items-center justify-center ${currentClass === 2 ? "bg-blue-600 shadow-blue-900/30" : "bg-purple-600 shadow-purple-900/30"}`}>
               <Layers className="w-6 h-6 animate-pulse" />
             </div>
             <div>
               <h1 className="text-base sm:text-lg md:text-xl font-bold tracking-tight text-white flex flex-wrap items-center gap-1.5 sm:gap-2">
                 Odoo WMS Clase Interactiva
-                <span className="text-[11px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full font-bold">
-                  Clase 1
+                <span className={`text-[11px] border px-2 py-0.5 rounded-full font-bold ${currentClass === 2 ? "bg-blue-500/20 text-blue-300 border-blue-500/30" : "bg-purple-500/20 text-purple-300 border-purple-500/30"}`}>
+                  {currentClass === 2 ? "Clase 2" : "Clase 1"}
                 </span>
                 <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 sm:px-2.5 py-0.5 rounded-full font-semibold">
-                  Logística Básica
+                  {currentClass === 2 ? "Gestión y Existencias" : "Logística Básica"}
                 </span>
               </h1>
-              <p className="text-[11px] sm:text-xs text-slate-400 leading-tight mt-0.5">
-                Curso: Logística con Odoo WMS (Clase 1: Introducción a la Logística y al Módulo de Inventario)
+              <p className="text-[11px] sm:text-xs text-slate-400 leading-tight mt-0.5 font-sans">
+                {currentClass === 2 
+                  ? "Curso: Logística con Odoo WMS (Clase 2: Gestión de Inventarios y Control de Existencias)"
+                  : "Curso: Logística con Odoo WMS (Clase 1: Introducción a la Logística y al Módulo de Inventario)"}
               </p>
             </div>
           </div>
@@ -641,7 +1011,7 @@ export default function App() {
           <div className="flex flex-wrap items-center gap-4 bg-slate-800/60 p-2 rounded-xl border border-slate-700/50" id="progress_section">
             <div className="text-center px-1">
               <span className="block text-[10px] text-slate-400 uppercase font-bold">Teoría</span>
-              <span className="text-sm font-semibold text-purple-300">{lessonsReadCount}/{totalLessonsCount}</span>
+              <span className={`text-sm font-semibold ${currentClass === 2 ? "text-blue-300" : "text-purple-300"}`}>{lessonsReadCount}/{totalLessonsCount}</span>
             </div>
             <div className="w-[1px] h-6 bg-slate-700"></div>
             <div className="text-center px-1">
@@ -651,7 +1021,7 @@ export default function App() {
             <div className="w-[1px] h-6 bg-slate-700"></div>
             <div className="text-center px-1">
               <span className="block text-[10px] text-slate-400 uppercase font-bold">Práctica</span>
-              <span className="text-sm font-semibold text-sky-400">{simStepsCompleted}/5</span>
+              <span className="text-sm font-semibold text-sky-400">{simStepsCompleted}/{maxSimSteps}</span>
             </div>
             
             {/* Global progress bar */}
@@ -729,10 +1099,13 @@ export default function App() {
             <div className="flex flex-col gap-4" id="teoria_tab_view">
               
               {/* Horizontal Course Tracker */}
-              <div className="grid grid-cols-2 md:grid-cols-7 gap-2" id="lessons_tracker_grid">
-                {lessonsData.map((lesson, idx) => {
+              <div className={`grid grid-cols-2 ${currentClass === 2 ? "md:grid-cols-5" : "md:grid-cols-7"} gap-2`} id="lessons_tracker_grid">
+                {lessonsList.map((lesson, idx) => {
                   const isActive = currentLessonIndex === idx;
                   const isRead = completedLessons[lesson.id];
+                  const borderActiveColor = currentClass === 2 ? "border-blue-500" : "border-purple-500";
+                  const shadowActiveColor = currentClass === 2 ? "shadow-blue-500/5" : "shadow-purple-500/5";
+                  const indicatorColor = currentClass === 2 ? "bg-blue-500" : "bg-purple-500";
                   return (
                     <button
                       key={lesson.id}
@@ -743,18 +1116,18 @@ export default function App() {
                       }}
                       className={`p-2.5 rounded-xl border text-left transition-all relative overflow-hidden group ${
                         isActive 
-                          ? "bg-slate-800 border-purple-500 shadow-md shadow-purple-500/5 text-white" 
+                          ? `bg-slate-800 ${borderActiveColor} shadow-md ${shadowActiveColor} text-white` 
                           : "bg-slate-800/40 border-slate-800 text-slate-400 hover:border-slate-700 hover:bg-slate-800/80"
                       }`}
                       id={`lesson_nav_btn_${lesson.id}`}
                     >
                       {/* Read indicator */}
                       <div className="absolute top-1.5 right-1.5 flex items-center space-x-1">
-                        {isRead && <span className="w-1.5 h-1.5 rounded-full bg-purple-500" title="Leído"></span>}
+                        {isRead && <span className={`w-1.5 h-1.5 rounded-full ${indicatorColor}`} title="Leído"></span>}
                         {isLessonQuizComplete(lesson) && <Check className="w-3.5 h-3.5 text-emerald-400" title="Quiz superado" />}
                       </div>
 
-                      <div className="text-[10px] uppercase font-bold text-slate-500 block">Tema 0{lesson.id}</div>
+                      <div className="text-[10px] uppercase font-bold text-slate-500 block">Tema {lesson.id > 100 ? `0${lesson.id - 100}` : `0${lesson.id}`}</div>
                       <div className="text-xs font-semibold truncate mt-0.5 text-slate-200 group-hover:text-white transition-colors">{lesson.title.split(".")[1]?.trim() || lesson.title}</div>
                     </button>
                   );
@@ -864,16 +1237,15 @@ export default function App() {
                           {quizPassedCount < totalQuizzesCount && quizPassedCount >= 10 && "¡Excelente desempeño logístico! Tienes muy claros los conceptos clave de almacenes, ubicaciones de partida doble y productos almacenables. Sigue así."}
                           {quizPassedCount < 10 && quizPassedCount >= 6 && "¡Aprobado con buen puntaje! Dominas los conceptos fundamentales, aunque te recomendamos repasar los temas de ubicaciones de vista y mermas virtuales para perfeccionar."}
                           {quizPassedCount < 6 && quizPassedCount > 0 && "Estás en proceso de aprendizaje. Continúa respondiendo las pruebas de conocimiento de cada tema para subir tu promedio y desbloquear el Certificado Oficial."}
-                          {quizPassedCount === 0 && "Aún no has iniciado tus pruebas de conocimiento. Haz clic en los temas de arriba, lee los conceptos clave y resuelve el 'Mini-Quiz' al final de cada lectura para obtener tu calificación."}
+                          {quizPassedCount === 0 && "Aún no has iniciado tus pruebas de conocimiento. Haz clic en los temas de arriba, lee los conceptos clave y resuelve el 'Mini-Quiz' al final de cada tema para ver tu progreso."}
                         </p>
                       </div>
                     </div>
                   </div>
                 </div>
-
                 {/* CERTIFICATE UNLOCKED ACCORDION */}
-                {quizPassedCount >= 6 ? (
-                  <div className="bg-gradient-to-r from-purple-950/30 to-indigo-950/30 border border-purple-500/30 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4" id="certificate_unlock_ribbon">
+                {quizPassedCount >= passingScoreThreshold ? (
+                  <div className={`bg-gradient-to-r ${currentClass === 2 ? "from-blue-950/30 to-indigo-950/30 border-blue-500/30" : "from-purple-950/30 to-indigo-950/30 border-purple-500/30"} border rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4`} id="certificate_unlock_ribbon">
                     <div className="flex items-start md:items-center gap-3">
                       <div className="p-2.5 bg-gradient-to-r from-amber-500 to-yellow-400 rounded-xl text-slate-950 shrink-0 shadow-lg shadow-yellow-500/10">
                         <Award className="w-5 h-5 text-slate-950" />
@@ -881,16 +1253,16 @@ export default function App() {
                       <div>
                         <h4 className="text-white text-xs font-bold uppercase tracking-wider flex items-center gap-1.5">
                           🏆 ¡Certificado de Aprobación Logística Disponible!
-                          <span className="text-[9.5px] bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full font-black animate-pulse">APROBADO</span>
+                          <span className="text-[9.5px] bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full font-black animate-pulse font-sans">APROBADO</span>
                         </h4>
-                        <p className="text-[11px] text-slate-400 leading-relaxed mt-0.5">Has obtenido una calificación aprobatoria de {quizPassedCount} respuestas correctas. Ingresa tu nombre e inspecciona tu certificado oficial de mérito en Logística Odoo ERP.</p>
+                        <p className="text-[11px] text-slate-400 leading-relaxed mt-0.5 font-sans">Has obtenido una calificación aprobatoria de {quizPassedCount} respuestas correctas. Ingresa tu nombre e inspecciona tu certificado oficial de mérito en Logística Odoo ERP.</p>
                       </div>
                     </div>
 
                     <div className="flex items-center space-x-2 shrink-0">
                       <button
                         onClick={() => setShowCertificate(!showCertificate)}
-                        className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-4 py-2 rounded-lg text-xs transition-all shadow-md shadow-amber-500/20 cursor-pointer text-center"
+                        className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black px-4 py-2 rounded-lg text-xs transition-all shadow-md shadow-amber-500/20 cursor-pointer text-center font-sans"
                         id="btn_toggle_certificate"
                       >
                         {showCertificate ? "Ocultar Certificado" : "Ver Certificado Académico"}
@@ -900,13 +1272,13 @@ export default function App() {
                 ) : (
                   <div className="bg-slate-900/30 border border-slate-800 p-3.5 rounded-xl text-xs text-slate-400 flex items-center gap-2.5">
                     <Lock className="w-4 h-4 text-slate-600 shrink-0 animate-pulse" />
-                    <span>Responde al menos <strong className="text-purple-300">6 preguntas correctas</strong> en total (llevas {quizPassedCount} de {totalQuizzesCount}) de los mini-quizzes de lectura teórica para desbloquear tu Certificado de Mérito Oficial.</span>
+                    <span className="font-sans">Responde al menos <strong className={currentClass === 2 ? "text-blue-300" : "text-purple-300"}>{passingScoreThreshold} preguntas correctas</strong> en total (llevas {quizPassedCount} de {totalQuizzesCount}) de los mini-quizzes de lectura teórica para desbloquear tu Certificado de Mérito Oficial.</span>
                   </div>
                 )}
 
                 {/* CERTIFICATE COMPONENT */}
-                {quizPassedCount >= 6 && showCertificate && (
-                  <div className="mt-4 p-6 bg-slate-950 border-4 border-double border-amber-500/30 rounded-2xl relative shadow-2xl overflow-hidden" id="digital_certificate_container">
+                {quizPassedCount >= passingScoreThreshold && showCertificate && (
+                  <div className="mt-4 p-6 bg-slate-950 border-4 border-double border-amber-500/30 rounded-2xl relative shadow-2xl overflow-hidden animate-fade-in" id="digital_certificate_container">
                     
                     {/* Background abstract styles */}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-5 pointer-events-none">
@@ -943,7 +1315,6 @@ export default function App() {
                       </div>
 
                       <p className="text-slate-300 text-xs leading-relaxed max-w-lg mx-auto font-sans">
-                        Ha acreditado satisfactoriamente el curso interactivo <strong className="text-white font-semibold">Logística con Odoo WMS (Clase 1: Introducción a la Logística y al Módulo de Inventario)</strong>, superando con mérito científico los mini-quizzes de control organizados por el tutor virtual con un promedio de <strong className="text-emerald-400 font-bold">{((quizPassedCount / totalQuizzesCount) * 5).toFixed(1)}/5</strong>.
                       </p>
 
                       <div className="grid grid-cols-2 gap-8 pt-6 max-w-md mx-auto text-center font-sans border-t border-slate-800/80">
@@ -1137,7 +1508,7 @@ export default function App() {
                     disabled={currentLessonIndex === 0}
                     onClick={() => {
                       setCurrentLessonIndex(prev => prev - 1);
-                      handleMarkLessonRead(lessonsData[currentLessonIndex - 1].id);
+                      handleMarkLessonRead(lessonsList[currentLessonIndex - 1].id);
                     }}
                     className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs transition-all ${
                       currentLessonIndex === 0
@@ -1158,9 +1529,13 @@ export default function App() {
                     <button
                       onClick={() => {
                         setCurrentLessonIndex(prev => prev + 1);
-                        handleMarkLessonRead(lessonsData[currentLessonIndex + 1].id);
+                        handleMarkLessonRead(lessonsList[currentLessonIndex + 1].id);
                       }}
-                      className="flex items-center space-x-1.5 bg-purple-600 hover:bg-purple-500 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-md shadow-purple-600/10"
+                      className={`flex items-center space-x-1.5 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-md ${
+                        currentClass === 2
+                          ? "bg-blue-600 hover:bg-blue-500 shadow-blue-600/10"
+                          : "bg-purple-600 hover:bg-purple-500 shadow-purple-600/10"
+                      }`}
                       id="btn_next_lesson"
                     >
                       <span>Siguiente Tema</span>

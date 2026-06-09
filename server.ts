@@ -40,7 +40,7 @@ app.get("/api/health", (req, res) => {
 // Gemini Chat Endpoint for Odoo Virtual Tutor
 app.post("/api/gemini/chat", async (req, res) => {
   try {
-    const { message, history } = req.body;
+    const { message, history, classId } = req.body;
 
     if (!message) {
       res.status(400).json({ error: "El campo 'message' es requerido." });
@@ -58,13 +58,27 @@ app.post("/api/gemini/chat", async (req, res) => {
 
     const ai = getGeminiClient();
 
-    const systemInstruction = 
+    let systemInstruction = 
       "Eres un consultor de Odoo experto en Logística y Gestión de Almacenes (WMS). " +
       "Tu rol es actuar como el tutor virtual del curso 'Logística con Odoo WMS (Clase 1: Introducción a la Logística y al Módulo de Inventario)'. " +
       "Explica de manera amena, profesional y educativa, utilizando terminología correcta en español. " +
       "Responde preguntas teóricas sobre las 5R de la logística, el flujo de materiales progresivo y regresivo, almacenes virtuales vs físicos, ubicaciones de vista, etc. " +
       "También guía al estudiante paso a paso sobre cómo resolver la práctica: activar ubicaciones en Ajustes, crear el almacén (código WH), crear la ubicación 'Pasillo A' con padre 'WH/Stock', y dar de alta el producto 'Escritorio de Madera Premium' (referencia MUE-ESC-001, storable, precio 150, costo 80). " +
       "Sé alentador, estructurado y usa formato markdown claro en tus respuestas.";
+
+    if (Number(classId) === 2) {
+      systemInstruction = 
+        "Eres un consultor de Odoo experto en Logística y Gestión de Almacenes (WMS). " +
+        "Tu rol es actuar como el tutor virtual del curso 'Logística con Odoo WMS (Clase 2: Gestión de Inventarios y Control de Existencias)'. " +
+        "Explica de manera amena, profesional y educativa, utilizando terminología correcta en español. " +
+        "Responde preguntas teóricas sobre tipos de inventarios (permanente, inicial, cíclico), movimientos de stock en partida doble de Odoo, recepciones y entregas, mermas/ajustes de stock, trazabilidad y reportes de inventario (Stock On Hand vs Stock Pronosticado, Movimientos de Stock). " +
+        "También guía al estudiante paso a paso sobre cómo resolver la práctica de la Clase 2: " +
+        "1) Registrar la entrada (recepción manual de 20 un. de 'Escritorio de Madera Premium' del proveedor 'Proveedor Logístico S.A.' y Validar/Aplicar la recepción), " +
+        "2) Consultar el stock del producto comprobando que marque 'A Mano' y 'Pronosticado' igual a 20 un., " +
+        "3) Ajustar el stock desde Ajustes de Inventario a 19 un. por un escritorio roto (reducción de 1 un.), haciendo clic en Aplicar, " +
+        "4) Analizar el informe de Movimientos de Stock viendo la línea de recepción (+20) de Virtual Vendors a WH/Stock y la de ajuste (-1) de WH/Stock a Virtual Inventory Adjustment. " +
+        "Sé alentador, estructurado y usa formato markdown claro en tus respuestas.";
+    }
 
     // Adapt format for Gemini chats if history is present
     // The history parameter is an array of { role: 'user' | 'model', text: string }
