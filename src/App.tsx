@@ -374,19 +374,31 @@ export default function App() {
   // Sync to separate localStorage keys
   useEffect(() => {
     if (chatMessagesClass1.length > 0) {
-      localStorage.setItem("odoo_lessons_chat_1", JSON.stringify(chatMessagesClass1));
+      try {
+        localStorage.setItem("odoo_lessons_chat_1", JSON.stringify(chatMessagesClass1));
+      } catch (e) {
+        console.warn("localStorage setItem denied or failed: ", e);
+      }
     }
   }, [chatMessagesClass1]);
 
   useEffect(() => {
     if (chatMessagesClass2.length > 0) {
-      localStorage.setItem("odoo_lessons_chat_2", JSON.stringify(chatMessagesClass2));
+      try {
+        localStorage.setItem("odoo_lessons_chat_2", JSON.stringify(chatMessagesClass2));
+      } catch (e) {
+        console.warn("localStorage setItem denied or failed: ", e);
+      }
     }
   }, [chatMessagesClass2]);
 
   useEffect(() => {
     if (chatMessagesClass3.length > 0) {
-      localStorage.setItem("odoo_lessons_chat_3", JSON.stringify(chatMessagesClass3));
+      try {
+        localStorage.setItem("odoo_lessons_chat_3", JSON.stringify(chatMessagesClass3));
+      } catch (e) {
+        console.warn("localStorage setItem denied or failed: ", e);
+      }
     }
   }, [chatMessagesClass3]);
 
@@ -1314,7 +1326,7 @@ export default function App() {
                       {/* Read indicator */}
                       <div className="absolute top-1.5 right-1.5 flex items-center space-x-1">
                         {isRead && <span className={`w-1.5 h-1.5 rounded-full ${indicatorColor}`} title="Leído"></span>}
-                        {isLessonQuizComplete(lesson) && <Check className="w-3.5 h-3.5 text-emerald-400" title="Quiz superado" />}
+                        {isLessonQuizComplete(lesson) && <Check className="w-3.5 h-3.5 text-emerald-400" />}
                       </div>
 
                       <div className="text-[10px] uppercase font-bold text-slate-500 block">Tema {lesson.id > 100 ? `0${lesson.id - 100}` : `0${lesson.id}`}</div>
