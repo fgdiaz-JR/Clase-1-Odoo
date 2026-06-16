@@ -145,8 +145,6 @@ export default function App() {
   // Navigation Tabs
   const [currentClass, setCurrentClass] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"teoria" | "simulador">("teoria");
-  const [showTutorChat, setShowTutorChat] = useState<boolean>(true);
-  
   // Lesson state
   const [currentLessonIndex, setCurrentLessonIndex] = useState<number>(0);
   const [completedQuizzes, setCompletedQuizzes] = useState<{ [key: string]: boolean }>({});
@@ -1271,20 +1269,6 @@ export default function App() {
                 )}
               </button>
             </div>
-
-            <button
-              onClick={() => setShowTutorChat(!showTutorChat)}
-              className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs md:text-sm font-semibold transition-all shadow-md ${
-                showTutorChat
-                  ? "bg-purple-900/30 text-purple-300 border border-purple-500/30 hover:bg-purple-900/50"
-                  : "bg-slate-950 text-slate-400 border border-slate-800/80 hover:text-slate-200 hover:bg-slate-900"
-              }`}
-              id="btn_toggle_tutor"
-              title="Mostrar u ocultar el Consultor IA"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-purple-400 animate-pulse" />
-              <span>{showTutorChat ? "Ocultar Tutor" : "Preguntar al Tutor"}</span>
-            </button>
           </div>
 
         </div>
@@ -1294,7 +1278,7 @@ export default function App() {
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 grid grid-cols-1 lg:grid-cols-12 gap-5" id="main_columns_container">
         
         {/* LEFT COLUMN/S - MAIN CONTENT AREA */}
-        <section className={`flex flex-col space-y-4 transition-all duration-300 ${showTutorChat ? "lg:col-span-8" : "lg:col-span-12"}`} id="main_content_area">
+        <section className="flex flex-col space-y-4 transition-all duration-300 lg:col-span-12" id="main_content_area">
           
           {/* TAB 1: TEORIA O TEMARIO */}
           {activeTab === "teoria" && (
@@ -4239,213 +4223,6 @@ export default function App() {
           )}
 
         </section>
-
-        {/* RIGHT COLUMN - virtual tutor chat (takes 4 cols) */}
-        {showTutorChat && (
-          <section className="lg:col-span-4 flex flex-col h-[calc(100vh-140px)] min-h-[500px]" id="tutor_chat_area">
-          <div className="bg-slate-800/90 border border-slate-700/60 rounded-2xl flex-1 flex flex-col overflow-hidden shadow-xl" id="chat_panel">
-            
-            {/* Header chat block */}
-            <div className="bg-slate-900 border-b border-slate-700/60 px-4 py-3.5 flex items-center justify-between" id="chat_header">
-              <div className="flex items-center space-x-2.5">
-                <div className="bg-purple-600/20 text-purple-400 p-2 rounded-xl border border-purple-500/20">
-                  <Sparkles className="w-4 h-4 animate-spin-slow" />
-                </div>
-                <div>
-                  <h3 className="text-xs md:text-sm font-bold text-white leading-tight">Tutor Odoo Consultor IA</h3>
-                  <p className="text-[10px] text-slate-400 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-ping"></span>
-                    Gemini Activo • En Línea
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex space-x-1.5">
-                <button
-                  onClick={() => {
-                    triggerConfirm(
-                      "¿Limpiar chat?",
-                      "¿Limpiar todo el historial del chat con el tutor?",
-                      () => {
-                        setChatMessages([
-                          {
-                            id: "welcome",
-                            role: "model",
-                            text: "Claro, he restablecido nuestra sesión. ¿En qué te ayudo con la materia de Odoo o Logística para la clase 1?",
-                            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                          }
-                        ]);
-                      }
-                    );
-                  }}
-                  className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors border border-slate-700/50"
-                  title="Restablecer chat"
-                  id="btn_clear_chat"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Chat message list area */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-900/30 scrollbar-thin" id="chat_message_container">
-              {chatMessages.map((msg) => {
-                const isModel = msg.role === "model";
-                return (
-                  <div 
-                    key={msg.id} 
-                    className={`flex items-start gap-2.5 max-w-[85%] ${isModel ? "mr-auto" : "ml-auto flex-row-reverse"}`}
-                    id={`chat_msg_bubble_${msg.id}`}
-                  >
-                    {/* Tiny Avatar */}
-                    <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 text-xs font-bold border ${
-                      isModel 
-                        ? "bg-purple-950 text-purple-400 border-purple-500/20" 
-                        : "bg-slate-700 text-slate-200 border-slate-600"
-                    }`}>
-                      {isModel ? "IA" : "Tú"}
-                    </div>
-
-                    <div className="space-y-1">
-                      <div className={`p-3 rounded-2xl text-xs leading-relaxed ${
-                        isModel 
-                          ? "bg-slate-800 text-slate-200 border border-slate-800/80 rounded-tl-none font-normal" 
-                          : "bg-purple-600 text-white rounded-tr-none font-medium shadow-md shadow-purple-600/10"
-                      }`}>
-                        
-                        {/* Process simple markdown formatting on message */}
-                        <div className="space-y-1.5 selection:bg-slate-50 selection:text-slate-900">
-                          {msg.text.split("\n\n").map((paragraph, pIdx) => {
-                            // Match bullet patterns
-                            if (paragraph.startsWith("•") || paragraph.startsWith("-")) {
-                              const lines = paragraph.split("\n");
-                              return (
-                                <ul key={pIdx} className="list-disc pl-4 space-y-1 my-1">
-                                  {lines.map((ln, lIdx) => {
-                                    const cleanedLine = ln.replace(/^[•\-\s]+/, "");
-                                    const boldFormatted = cleanedLine.split(/\*\*(.*?)\*\*/g);
-                                    return (
-                                      <li key={lIdx}>
-                                        {boldFormatted.map((textPart, idxPart) => 
-                                          idxPart % 2 === 1 ? <strong key={idxPart} className={isModel ? "text-purple-300 font-bold" : "text-white font-bold"}>{textPart}</strong> : <span key={idxPart}>{textPart}</span>
-                                        )}
-                                      </li>
-                                    );
-                                  })}
-                                </ul>
-                              );
-                            }
-
-                            // Match normal text with bold decorators
-                            const lineSegments = paragraph.split(/\*\*(.*?)\*\*/g);
-                            return (
-                              <p key={pIdx} className="leading-relaxed">
-                                {lineSegments.map((textPart, idxPart) => 
-                                  idxPart % 2 === 1 ? <strong key={idxPart} className={isModel ? "text-purple-300 font-bold" : "text-white font-bold"}>{textPart}</strong> : <span key={idxPart}>{textPart}</span>
-                                )}
-                              </p>
-                            );
-                          })}
-                        </div>
-
-                      </div>
-                      <span className="text-[9px] text-slate-500 block text-right font-mono pr-1">{msg.timestamp}</span>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* Chat loading bubble */}
-              {isChatLoading && (
-                <div className="flex items-start gap-2 max-w-[80%]" id="chat_loading_bubble">
-                  <div className="w-7 h-7 rounded-lg bg-purple-950 text-purple-400 border border-purple-500/20 flex items-center justify-center text-xs font-bold shrink-0">
-                    IA
-                  </div>
-                  <div className="bg-slate-800/60 text-slate-400 p-3 rounded-2xl rounded-tl-none border border-slate-800 text-xs flex items-center space-x-2">
-                    <span className="flex space-x-1">
-                      <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></span>
-                      <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></span>
-                      <span className="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></span>
-                    </span>
-                    <span>Tutor redactando...</span>
-                  </div>
-                </div>
-              )}
-
-              {chatError && (
-                <div className="bg-rose-950/40 text-rose-300 p-3 rounded-xl border border-rose-900/40 text-xs" id="chat_error_message">
-                  {chatError}
-                </div>
-              )}
-
-              <div ref={chatEndRef}></div>
-            </div>
-
-            {/* Quick Questions buttons list */}
-            <div className="p-2 border-t border-slate-700/40 bg-slate-900/15" id="chat_presets">
-              <span className="text-[10px] text-slate-400 font-bold block mb-1.5 uppercase tracking-wider pl-1.5">Pautas del temario / Preguntas rápidas:</span>
-              <div className="flex flex-wrap gap-1.5 pr-1.5 pb-0.5" id="preset_buttons">
-                <button 
-                  onClick={() => triggerQuickTopic("¿Cuáles son las 5 R de la logística?")}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded-lg text-[10px] border border-slate-700/50 hover:text-white transition-all focus:outline-none"
-                >
-                  🚚 5 R's Logística
-                </button>
-                <button 
-                  onClick={() => triggerQuickTopic("¿Qué diferencia hay entre ubicación interna, de vista y virtual?")}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded-lg text-[10px] border border-slate-700/50 hover:text-white transition-all focus:outline-none"
-                >
-                  🗺️ Tipos de Ubicaciones
-                </button>
-                <button 
-                  onClick={() => triggerQuickTopic("¿Cómo activo el módulo de ubicaciones en los ajustes?")}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded-lg text-[10px] border border-slate-700/50 hover:text-white transition-all focus:outline-none"
-                >
-                  ⚙️ Guía de Ajustes
-                </button>
-                <button 
-                  onClick={() => triggerQuickTopic("¿Cómo configuro la ficha del Escritorio de Madera Premium?")}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded-lg text-[10px] border border-slate-700/50 hover:text-white transition-all focus:outline-none"
-                >
-                  📦 Crear Producto
-                </button>
-              </div>
-            </div>
-
-            {/* Input entry chat row */}
-            <div className="p-3 border-t border-slate-700/60 bg-slate-900" id="chat_input_section">
-              <div className="flex items-center bg-slate-800 border border-slate-700/60 rounded-xl px-2.5 py-1 focus-within:ring-1 focus-within:ring-purple-600 focus-within:border-transparent transition-all">
-                <input 
-                  type="text"
-                  value={chatInput}
-                  onChange={(e) => setChatInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !isChatLoading) {
-                      handleSendMessage();
-                    }
-                  }}
-                  placeholder="Consúltale al tutor de Odoo sobre el curso..."
-                  className="bg-transparent border-none outline-none flex-1 text-slate-100 text-xs py-1.5 focus:ring-0 placeholder-slate-500 font-sans"
-                  id="chat_text_input"
-                />
-                <button
-                  disabled={!chatInput.trim() || isChatLoading}
-                  onClick={() => handleSendMessage()}
-                  className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                    chatInput.trim() && !isChatLoading
-                      ? "bg-purple-600 text-white hover:bg-purple-500"
-                      : "text-slate-600 cursor-not-allowed"
-                  }`}
-                  id="chat_send_btn"
-                >
-                  <Send className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-
-          </div>
-        </section>
-        )}
 
       </main>
 
