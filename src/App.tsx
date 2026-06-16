@@ -530,24 +530,14 @@ export default function App() {
   };
 
   // Submit Quiz helper
-  const handleSelectQuizOption = (e: React.MouseEvent | undefined, qId: string, optionIdx: number) => {
+  const handleSelectQuizOption = (e: React.MouseEvent | undefined, qId: string, optionIdx: number, correctAnswerIdx: number) => {
     if (e) {
       e.preventDefault();
       e.stopPropagation();
     }
     setQuizScores(prev => ({ ...prev, [qId]: optionIdx }));
-  };
-
-  const handleVerifyQuiz = (e: React.MouseEvent | undefined, qId: string, correctAnswerIdx: number) => {
-    if (e) {
-      e.preventDefault();
-      e.stopPropagation();
-    }
-    const selectedIdx = quizScores[qId];
-    if (selectedIdx === undefined) return;
-
     setQuizSubmitted(prev => ({ ...prev, [qId]: true }));
-    if (selectedIdx === correctAnswerIdx) {
+    if (optionIdx === correctAnswerIdx) {
       setCompletedQuizzes(prev => ({ ...prev, [qId]: true }));
     }
   };
@@ -1634,13 +1624,13 @@ export default function App() {
                               let btnClass = "bg-slate-800/50 border-slate-700/40 text-slate-300 hover:bg-slate-800 hover:border-slate-600";
                               
                               if (isSubmitted) {
-                                if (optIdx === q.answerIndex) {
-                                  btnClass = "bg-emerald-500/20 border-emerald-500 text-emerald-300";
-                                } else if (isSelected) {
-                                  btnClass = "bg-red-500/20 border-red-500 text-red-300";
-                                } else {
-                                  btnClass = "bg-slate-900/40 border-slate-800 text-slate-500 opacity-60";
-                                }
+                                  if (optIdx === q.answerIndex) {
+                                    btnClass = "bg-emerald-500/20 border-emerald-500 text-emerald-300";
+                                  } else if (isSelected) {
+                                    btnClass = "bg-red-500/20 border-red-500 text-red-300";
+                                  } else {
+                                    btnClass = "bg-slate-900/40 border-slate-800 text-slate-500 opacity-60";
+                                  }
                               } else if (isSelected) {
                                 btnClass = "bg-purple-600/30 border-purple-500 text-purple-200 font-medium";
                               }
@@ -1650,7 +1640,7 @@ export default function App() {
                                   type="button"
                                   key={optIdx}
                                   disabled={isSubmitted}
-                                  onClick={(e) => handleSelectQuizOption(e, q.id, optIdx)}
+                                  onClick={(e) => handleSelectQuizOption(e, q.id, optIdx, q.answerIndex)}
                                   className={`w-full text-left p-3 rounded-lg border text-xs transition-all flex items-start space-x-2.5 ${btnClass}`}
                                   id={`quiz_opt_${q.id}_${optIdx}`}
                                 >
@@ -1661,24 +1651,8 @@ export default function App() {
                             })}
                           </div>
 
-                          {/* Action Button for checking */}
-                          {!isSubmitted ? (
-                            <div key={`submit_action_${q.id}`} className="mt-3 flex justify-end">
-                              <button
-                                type="button"
-                                disabled={selectedOptionAndStored === undefined}
-                                onClick={(e) => handleVerifyQuiz(e, q.id, q.answerIndex)}
-                                className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                                  selectedOptionAndStored !== undefined
-                                    ? "bg-emerald-600 text-white hover:bg-emerald-500 shadow-md cursor-pointer"
-                                    : "bg-slate-800 text-slate-500 cursor-not-allowed"
-                                  }`}
-                                id={`quiz_submit_btn_${q.id}`}
-                              >
-                                Comprobar Respuesta
-                              </button>
-                            </div>
-                          ) : (
+                          {/* Instant Feedback / Explanation */}
+                          {isSubmitted && (
                             <div key={`explanation_action_${q.id}`} className="mt-3 bg-slate-800/40 p-3 rounded-lg border border-slate-700/30 text-xs text-slate-300 leading-relaxed" id={`quiz_resp_exp_${q.id}`}>
                               <strong className="text-purple-400 block mb-1">Explicación técnica:</strong>
                               <span className="block mt-1">{q.explanation}</span>
