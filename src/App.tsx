@@ -29,11 +29,13 @@ import {
   Warehouse,
   ShoppingCart,
   Users,
-  Trash2
+  Trash2,
+  BarChart3
 } from "lucide-react";
 import { lessonsData } from "./data/lessons";
 import { lessonsClass2Data } from "./data/lessonsClass2";
 import { lessonsClass3Data } from "./data/lessonsClass3";
+import { lessonsClass4Data } from "./data/lessonsClass4";
 import { Lesson, OdooLocation, OdooProduct, ChatMessage, SimulatorState } from "./types";
 
 const simulatorHints = [
@@ -141,6 +143,39 @@ const class3Hints = [
   }
 ];
 
+const class4Hints = [
+  {
+    step: 0,
+    title: "Paso 1: Creación de un Pedido de Salida Directo",
+    shortHint: "Simula una orden de entrega (WH/OUT) de 5 escritorios para el cliente 'Almacenes del Valle'.",
+    detailedHint: "Ve a las tarjetas del tablero, selecciona 'Órdenes de Entrega' -> Nueva Operación. Selecciona o escribe el cliente 'Almacenes del Valle', agrega una línea para el producto 'Escritorio de Madera Premium' con cantidad de '5' unidades de demanda y haz clic en 'Guardar'. El estado cambiará a 'Listo'."
+  },
+  {
+    step: 1,
+    title: "Paso 2: Preparación y Validación del Despacho",
+    shortHint: "Escribe 5 unidades en la columna Hecho y valida la salida definitiva.",
+    detailedHint: "Abre la orden de entrega generada (WH/OUT), digita exactamente unas cantidades realizadas de '5' unidades en la columna de 'Hecho' y presiona el botón morado 'Validar'. El estado de la orden de entrega pasará a 'Hecho'."
+  },
+  {
+    step: 2,
+    title: "Paso 3: Consulta del Movimiento de Stock",
+    shortHint: "Visualiza el reporte del balance de movimiento físico para confirmar el valor neto de -5.",
+    detailedHint: "Ve al menú superior de Inventario -> Informes -> Movimientos de Stock. Filtra o busca por tu producto 'Escritorio de Madera Premium' y confirma el asiento con origen 'WH/Stock' hacia 'Virtual Locations/Customers' por un saldo de -5 unidades."
+  },
+  {
+    step: 3,
+    title: "Paso 4: Proyecto Integrador Final",
+    shortHint: "Usa el portal unificado para completar con éxito el escenario 'Soluciones Digitales'.",
+    detailedHint: "Completa secuencialmente las acciones del proyecto comercial: 1) Registra el producto almacenable de Soluciones Digitales, 2) Crea el proveedor local, 3) Elabora la orden de compra por 15 unidades, 4) Valida la recepción física de ingreso, 5) Realiza una entrega de salida de 4 unidades, valida dicho despacho y asienta los informes finales."
+  },
+  {
+    step: 4,
+    title: "¡Felicidades Graduado de Honor!",
+    shortHint: "Has completado satisfactoriamente el curso completo de Odoo WMS & Logística.",
+    detailedHint: "Has demostrado poseer excelentes capacidades técnicas y estratégicas de cara al flujo de abastecimiento y distribución empresarial. Descarga tu certificado definitivo de Mérito."
+  }
+];
+
 export default function App() {
   // Navigation Tabs
   const [currentClass, setCurrentClass] = useState<number | null>(null);
@@ -182,6 +217,30 @@ export default function App() {
     purchaseOrders: [] as any[],
     receipts: [] as any[],
     menuSection: "dashboard"
+  });
+
+  // Simulator Class 4 State
+  const [sim4State, setSim4State] = useState<any>({
+    step: 1, // 1 to 5
+    outboundContact: "",
+    outboundProduct: "Escritorio de Madera Premium",
+    outboundDemand: 5,
+    outboundDone: 0,
+    outboundValidated: false,
+    viewedMovements: false,
+    menuSection: "dashboard",
+    // Case study integrator parameters:
+    integratorStep: 1, // 1: product, 2: provider, 3: buy order, 4: receive, 5: sell delivery, 6: completed
+    intProductName: "",
+    intProductSKU: "",
+    intProductCost: 0,
+    intProviderName: "",
+    intPurchaseConfirmed: false,
+    intReceivedQty: 0,
+    intReceivedValidated: false,
+    intClientName: "",
+    intDeliveryQty: 0,
+    intDeliveryValidated: false
   });
 
   // Simulator state
@@ -258,6 +317,12 @@ export default function App() {
   // Interactive states for Class 2 stock audits & scrap/mermas
   const [c2AjusteRealCountInput, setC2AjusteRealCountInput] = useState<number>(50);
   const [c2MermaQtyInput, setC2MermaQtyInput] = useState<number>(2);
+
+  // Interactive states for Class 4 outbound deliveries and dispatch KPIs
+  const [c4CustomerNameInput, setC4CustomerNameInput] = useState("");
+  const [c4DispatchQtyInput, setC4DispatchQtyInput] = useState<number>(5);
+  const [c4PickingValidated, setC4PickingValidated] = useState(false);
+  const [c4PackingValidated, setC4PackingValidated] = useState(false);
 
   // Custom modal dialog state to replace native alert/confirm on mobile platforms
   const [modal, setModal] = useState<{
@@ -407,11 +472,13 @@ export default function App() {
 
   // Dynamically resolve lessons for the active class
   const lessonsList = 
-    currentClass === 3 
-      ? lessonsClass3Data 
-      : currentClass === 2 
-        ? lessonsClass2Data 
-        : lessonsData;
+    currentClass === 4
+      ? lessonsClass4Data
+      : currentClass === 3 
+        ? lessonsClass3Data 
+        : currentClass === 2 
+          ? lessonsClass2Data 
+          : lessonsData;
 
   // Synchronize browser tab title for Clase
   useEffect(() => {
@@ -421,6 +488,8 @@ export default function App() {
       document.title = "Clase 2: Gestión de Inventarios y Control de Existencias - Odoo WMS";
     } else if (currentClass === 3) {
       document.title = "Clase 3: Procesos de Compras y Abastecimiento - Odoo WMS";
+    } else if (currentClass === 4) {
+      document.title = "Clase 4: Gestión de Despachos y Operaciones Logísticas - Odoo WMS";
     } else {
       document.title = "Logística y Almacenes con Odoo WMS - Portal Académico";
     }
@@ -771,6 +840,13 @@ export default function App() {
           ],
           activeStep: 0
         });
+        setSim2State({ step: 1, inventoryValution: 4000, onHandQuantity: 50 });
+        setSim3State({ step: 1, providerCreated: false, purchaseOrderState: "draft", balanceReceived: false });
+        setSim4State({ step: 1, customerCreated: false, outboundValidated: false, stockReportAudited: false });
+        setC4CustomerNameInput("");
+        setC4DispatchQtyInput(5);
+        setC4PickingValidated(false);
+        setC4PackingValidated(false);
         setSettingsCheckLocations(false);
         setSettingsSaved(false);
         setWhFormName("");
@@ -811,13 +887,15 @@ export default function App() {
     return acc + l.quiz.filter(q => completedQuizzes[q.id]).length;
   }, 0);
 
-  const simStepsCompleted = currentClass === 3
-    ? (sim3State.step === 5 ? 4 : sim3State.step - 1)
-    : currentClass === 2 
-      ? (sim2State.step === 5 ? 4 : sim2State.step - 1)
-      : simState.activeStep;
+  const simStepsCompleted = currentClass === 4
+    ? (sim4State.step === 5 ? 4 : sim4State.step - 1)
+    : currentClass === 3
+      ? (sim3State.step === 5 ? 4 : sim3State.step - 1)
+      : currentClass === 2 
+        ? (sim2State.step === 5 ? 4 : sim2State.step - 1)
+        : simState.activeStep;
 
-  const maxSimSteps = currentClass === 3 ? 4 : (currentClass === 2 ? 4 : 5);
+  const maxSimSteps = currentClass === 4 ? 4 : (currentClass === 3 ? 4 : (currentClass === 2 ? 4 : 5));
 
   const overallProgressPercent = Math.min(
     100,
@@ -855,6 +933,18 @@ export default function App() {
       ((sim3CompletedCount / 4) * 30)
     ));
 
+    const readClass4Count = [301, 302, 303, 304, 305, 306].filter(id => completedLessons[id]).length;
+    const quizClass4PassedCount = [
+      "q4_301_1", "q4_301_2", "q4_302_1", "q4_302_2", 
+      "q4_303_1", "q4_303_2", "q4_304_1", "q4_305_1", "q4_306_1"
+    ].filter(id => completedQuizzes[id]).length;
+    const sim4CompletedCount = sim4State.step === 5 ? 4 : sim4State.step - 1;
+    const class4ProgressPercent = Math.min(100, Math.round(
+      ((readClass4Count / 6) * 40) +
+      ((quizClass4PassedCount / 9) * 30) +
+      ((sim4CompletedCount / 4) * 30)
+    ));
+
     return (
       <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white" id="portal_container">
         {/* Portal Header */}
@@ -881,7 +971,7 @@ export default function App() {
               <div className="text-right">
                 <span className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Tu Progreso Global</span>
                 <span className="text-xl font-bold text-white font-mono">
-                  {Math.round((class1ProgressPercent + class2ProgressPercent + class3ProgressPercent) / 3)}%
+                  {Math.round((class1ProgressPercent + class2ProgressPercent + class3ProgressPercent + class4ProgressPercent) / 4)}%
                 </span>
               </div>
               <div className="w-10 h-10 bg-purple-500/10 rounded-xl border border-purple-500/20 flex items-center justify-center">
@@ -1077,30 +1167,57 @@ export default function App() {
                 </button>
               </div>
 
-              {/* CLASE 4 - locked */}
-              <div className="bg-slate-950/20 border border-slate-800/40 rounded-3xl p-6 relative flex flex-col justify-between opacity-60 filter grayscale-[20%]" id="class_card_4">
+              {/* CLASE 4 */}
+              <div className="bg-slate-950/60 rounded-3xl border border-slate-800/80 hover:border-indigo-500/30 transition-all p-6 relative flex flex-col justify-between group shadow-xl" id="class_card_4">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold tracking-widest text-slate-500 uppercase font-sans">Clase 4</span>
-                    <span className="bg-slate-800 text-slate-400 border border-slate-700/50 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                      <Lock className="w-3 h-3" /> Próximamente
-                    </span>
+                    <span className="text-xs font-bold tracking-widest text-indigo-400 uppercase font-sans">Clase 4</span>
+                    <span className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-[10px] font-bold px-2.5 py-0.5 rounded-full">Activa</span>
                   </div>
                   <div className="space-y-1">
-                    <h4 className="text-md font-bold text-slate-300 font-sans">4. Control de Calidad y Despachos Avanzados</h4>
-                    <p className="text-xs text-slate-500 leading-relaxed font-sans">
-                      Domina mermas y ruteos logísticos complejos como el flujo en 3 pasos: Entrada + Inspección Física + Almacenado final, y despachos certificados por control de calidad.
+                    <h4 className="text-md font-bold text-white group-hover:text-indigo-300 transition-colors font-sans">4. Gestión de Despachos y Operaciones Logísticas</h4>
+                    <p className="text-xs text-slate-400 leading-relaxed font-sans mt-1 text-justify">
+                      Ejecuta con exactitud procesos de salida (Outbound) en Odoo, la preparación y validación por picking/packing, gestiona clientes, backorders, y domina métricas clave de rendimiento (KPIs).
                     </p>
+                  </div>
+
+                  {/* Metrics progress bar */}
+                  <div className="bg-slate-900 border border-slate-800/60 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="text-slate-500">Completado:</span>
+                      <span className="text-white font-bold">{class4ProgressPercent}%</span>
+                    </div>
+                    <div className="bg-slate-850 rounded-full h-2 overflow-hidden w-full">
+                      <div className="bg-indigo-600 h-full rounded-full transition-all" style={{ width: `${class4ProgressPercent}%` }}></div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 pt-1 text-[10px] text-center font-mono">
+                      <div>
+                        <span className="block text-[9px] text-slate-500 uppercase font-bold">Teoría</span>
+                        <span className="text-slate-300">{readClass4Count}/6</span>
+                      </div>
+                      <div>
+                        <span className="block text-[9px] text-slate-500 uppercase font-bold">Quizzes</span>
+                        <span className="text-slate-300">{quizClass4PassedCount}/9</span>
+                      </div>
+                      <div>
+                        <span className="block text-[9px] text-slate-500 uppercase font-bold">Práctica</span>
+                        <span className="text-slate-300">{sim4CompletedCount}/4</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 <button
-                  disabled
-                  className="mt-6 w-full bg-slate-800 text-slate-500 font-bold text-xs py-3 px-4 rounded-xl cursor-not-allowed text-center flex items-center justify-center gap-2 border border-slate-800"
+                  onClick={() => {
+                    setCurrentClass(4);
+                    setCurrentLessonIndex(0);
+                    setActiveTab("teoria");
+                  }}
+                  className="mt-6 w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition-all shadow-lg hover:shadow-indigo-600/15 text-center flex items-center justify-center gap-2 cursor-pointer"
                   id="btn_enter_class_4"
                 >
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>Módulo Bloqueado</span>
+                  <span>{class4ProgressPercent > 0 ? "Reanudar Clase 4" : "Iniciar Clase 4"}</span>
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
 
@@ -1156,7 +1273,52 @@ export default function App() {
     );
   }
 
-  const passingScoreThreshold = currentClass === 2 ? 3 : 6;
+  const passingScoreThreshold = 
+    currentClass === 4 
+      ? 5 
+      : currentClass === 3 
+        ? 6 
+        : currentClass === 2 
+          ? 3 
+          : 6;
+
+  // Resolve header theme parameters dynamically
+  const headerTheme = 
+    currentClass === 4
+      ? {
+          classNum: "Clase 4",
+          className: "Despachos y KPIs",
+          bg: "bg-indigo-600 shadow-indigo-900/30",
+          badge: "bg-indigo-500/20 text-indigo-300 border-indigo-500/30",
+          textAccent: "text-indigo-400",
+          desc: "Curso: Logística con Odoo WMS (Clase 4: Gestión de Despachos y Operaciones Logísticas)",
+        }
+      : currentClass === 3
+        ? {
+            classNum: "Clase 3",
+            className: "Compras y Abastecimiento",
+            bg: "bg-emerald-600 shadow-emerald-900/30",
+            badge: "bg-emerald-500/20 text-emerald-300 border-emerald-500/30",
+            textAccent: "text-emerald-400",
+            desc: "Curso: Logística con Odoo WMS (Clase 3: Procesos de Compras y Abastecimiento)",
+          }
+        : currentClass === 2
+          ? {
+              classNum: "Clase 2",
+              className: "Gestión y Existencias",
+              bg: "bg-blue-600 shadow-blue-900/30",
+              badge: "bg-blue-500/20 text-blue-300 border-blue-500/30",
+              textAccent: "text-blue-400",
+              desc: "Curso: Logística con Odoo WMS (Clase 2: Gestión de Inventarios y Control de Existencias)",
+            }
+          : {
+              classNum: "Clase 1",
+              className: "Logística Básica",
+              bg: "bg-purple-600 shadow-purple-900/30",
+              badge: "bg-purple-500/20 text-purple-300 border-purple-500/30",
+              textAccent: "text-purple-400",
+              desc: "Curso: Logística con Odoo WMS (Clase 1: Introducción a la Logística y al Módulo de Inventario)",
+            };
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white" id="main_container">
@@ -1176,23 +1338,21 @@ export default function App() {
               <ArrowLeft className="w-4 h-4" />
               <span className="text-xs font-bold hidden sm:inline">Portal</span>
             </button>
-            <div className={`p-2.5 rounded-lg text-white shadow-lg flex items-center justify-center ${currentClass === 2 ? "bg-blue-600 shadow-blue-900/30" : "bg-purple-600 shadow-purple-900/30"}`}>
+            <div className={`p-2.5 rounded-lg text-white shadow-lg flex items-center justify-center ${headerTheme.bg}`}>
               <Layers className="w-6 h-6 animate-pulse" />
             </div>
             <div>
               <h1 className="text-base sm:text-lg md:text-xl font-bold tracking-tight text-white flex flex-wrap items-center gap-1.5 sm:gap-2">
                 Odoo WMS Clase Interactiva
-                <span className={`text-[11px] border px-2 py-0.5 rounded-full font-bold ${currentClass === 2 ? "bg-blue-500/20 text-blue-300 border-blue-500/30" : "bg-purple-500/20 text-purple-300 border-purple-500/30"}`}>
-                  {currentClass === 2 ? "Clase 2" : "Clase 1"}
+                <span className={`text-[11px] border px-2 py-0.5 rounded-full font-bold ${headerTheme.badge}`}>
+                  {headerTheme.classNum}
                 </span>
                 <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-1.5 sm:px-2.5 py-0.5 rounded-full font-semibold">
-                  {currentClass === 2 ? "Gestión y Existencias" : "Logística Básica"}
+                  {headerTheme.className}
                 </span>
               </h1>
               <p className="text-[11px] sm:text-xs text-slate-400 leading-tight mt-0.5 font-sans">
-                {currentClass === 2 
-                  ? "Curso: Logística con Odoo WMS (Clase 2: Gestión de Inventarios y Control de Existencias)"
-                  : "Curso: Logística con Odoo WMS (Clase 1: Introducción a la Logística y al Módulo de Inventario)"}
+                {headerTheme.desc}
               </p>
             </div>
           </div>
@@ -1201,7 +1361,7 @@ export default function App() {
           <div className="flex flex-wrap items-center gap-4 bg-slate-800/60 p-2 rounded-xl border border-slate-700/50" id="progress_section">
             <div className="text-center px-1">
               <span className="block text-[10px] text-slate-400 uppercase font-bold">Teoría</span>
-              <span className={`text-sm font-semibold ${currentClass === 2 ? "text-blue-300" : "text-purple-300"}`}>{lessonsReadCount}/{totalLessonsCount}</span>
+              <span className={`text-sm font-semibold ${headerTheme.textAccent}`}>{lessonsReadCount}/{totalLessonsCount}</span>
             </div>
             <div className="w-[1px] h-6 bg-slate-700"></div>
             <div className="text-center px-1">
@@ -1775,7 +1935,78 @@ export default function App() {
               </div>
 
               {/* Progress Checklist for steps */}
-              {currentClass === 3 ? (
+              {currentClass === 4 ? (
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 bg-slate-950 p-3 rounded-2xl border border-slate-800/80 shadow-inner" id="sim_steps_indicator">
+                  {/* Class 4 Steps */}
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    sim4State.step >= 2
+                      ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400"
+                      : sim4State.step === 1
+                        ? "bg-indigo-950/40 border-indigo-500 text-white shadow-lg shadow-indigo-500/10 font-bold"
+                        : "bg-slate-900/20 border-slate-900 text-slate-600"
+                  }`} id="class4_step_1">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 1</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {sim4State.step >= 2 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
+                      Crear Despacho OUT
+                    </div>
+                  </div>
+
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    sim4State.step >= 3
+                      ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400"
+                      : sim4State.step === 2
+                        ? "bg-indigo-950/40 border-indigo-500 text-white shadow-lg shadow-indigo-500/10 font-bold"
+                        : "bg-slate-900/20 border-slate-900 text-slate-600"
+                  }`} id="class4_step_2">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 2</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {sim4State.step >= 3 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
+                      Validar Despacho
+                    </div>
+                  </div>
+
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    sim4State.step >= 4
+                      ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400"
+                      : sim4State.step === 3
+                        ? "bg-indigo-950/40 border-indigo-500 text-white shadow-lg shadow-indigo-500/10 font-bold"
+                        : "bg-slate-900/20 border-slate-900 text-slate-600"
+                  }`} id="class4_step_3">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 3</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {sim4State.step >= 4 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
+                      Movimientos Stock
+                    </div>
+                  </div>
+
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    sim4State.step >= 5
+                      ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400"
+                      : sim4State.step === 4
+                        ? "bg-indigo-950/40 border-indigo-500 text-white shadow-lg shadow-indigo-500/10 font-bold"
+                        : "bg-slate-900/20 border-slate-900 text-slate-600"
+                  }`} id="class4_step_4">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 4</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {sim4State.step >= 5 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
+                      Proyecto Final
+                    </div>
+                  </div>
+
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    sim4State.step >= 5
+                      ? "bg-gradient-to-r from-indigo-500/20 to-sky-500/20 border-indigo-400 text-indigo-300 font-bold animate-pulse"
+                      : "bg-slate-900/20 border-slate-900 text-slate-600"
+                  }`} id="class4_step_5">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Graduación</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {sim4State.step >= 5 ? <Award className="w-3.5 h-3.5 text-indigo-400 animate-bounce" /> : null}
+                      ¡Máster WMS!
+                    </div>
+                  </div>
+                </div>
+              ) : currentClass === 3 ? (
                 <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 bg-slate-950 p-3 rounded-2xl border border-slate-800/80 shadow-inner" id="sim_steps_indicator">
                   {/* Class 3 Steps */}
                   <div className={`p-2 rounded-xl border text-center transition-all relative ${
@@ -2020,7 +2251,9 @@ export default function App() {
                     <div>
                       <h4 className="text-white text-[11px] font-bold uppercase tracking-wider">Asistente de Logística Odoo</h4>
                       <p className="text-[10px] text-purple-300 font-medium font-sans">
-                        {currentClass === 3 ? (
+                        {currentClass === 4 ? (
+                          sim4State.step < 5 ? `Guía oficial del tutor para el Paso ${sim4State.step}` : "¡Felicitaciones!"
+                        ) : currentClass === 3 ? (
                           sim3State.step < 5 ? `Guía oficial del tutor para el Paso ${sim3State.step}` : "¡Felicitaciones!"
                         ) : currentClass === 2 ? (
                           sim2State.step < 5 ? `Guía oficial del tutor para el Paso ${sim2State.step}` : "¡Felicitaciones!"
@@ -2047,7 +2280,9 @@ export default function App() {
                 <div className="space-y-1">
                   <div className="text-slate-200 font-semibold text-xs flex items-center gap-1.5">
                     <Compass className="w-3.5 h-3.5 text-purple-500" />
-                    {currentClass === 3 ? (
+                    {currentClass === 4 ? (
+                      class4Hints[Math.min(sim4State.step - 1, 4)].title
+                    ) : currentClass === 3 ? (
                       class3Hints[Math.min(sim3State.step - 1, 4)].title
                     ) : currentClass === 2 ? (
                       class2Hints[Math.min(sim2State.step - 1, 4)].title
@@ -2056,7 +2291,9 @@ export default function App() {
                     )}
                   </div>
                   <p className="text-xs text-slate-400 leading-relaxed font-sans">
-                    {currentClass === 3 ? (
+                    {currentClass === 4 ? (
+                      class4Hints[Math.min(sim4State.step - 1, 4)].shortHint
+                    ) : currentClass === 3 ? (
                       class3Hints[Math.min(sim3State.step - 1, 4)].shortHint
                     ) : currentClass === 2 ? (
                       class2Hints[Math.min(sim2State.step - 1, 4)].shortHint
@@ -2071,7 +2308,9 @@ export default function App() {
                     <div className="font-bold text-white mb-1 uppercase tracking-wider text-[9px] flex items-center gap-1">
                       <Award className="w-3 h-3 text-[#714B67]" /> Valores Esperados del Ejercicio:
                     </div>
-                    {currentClass === 3 ? (
+                    {currentClass === 4 ? (
+                      class4Hints[Math.min(sim4State.step - 1, 4)].detailedHint
+                    ) : currentClass === 3 ? (
                       class3Hints[Math.min(sim3State.step - 1, 4)].detailedHint
                     ) : currentClass === 2 ? (
                       class2Hints[Math.min(sim2State.step - 1, 4)].detailedHint
@@ -2260,7 +2499,44 @@ export default function App() {
                 {/* Sub Menu Navbar for Operational Apps (only shown if logged in and in apps) */}
                 {simState.hasLoggedIn && simMenuSection !== "dashboard" && simMenuSection !== "ajustes" && (
                   <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between text-xs text-slate-700" id="odoo_sub_nav_shadow-xs">
-                    {currentClass === 3 ? (
+                    {currentClass === 4 ? (
+                      <div className="flex space-x-4 items-center overflow-x-auto py-0.5 scrollbar-thin">
+                        <span className="font-bold text-[#714B67] text-sm shrink-0">Logística de Despachos</span>
+                        <button 
+                          onClick={() => setSimMenuSection("despachos_outbound")}
+                          className={`hover:bg-slate-100 px-2 py-1 rounded font-semibold shrink-0 ${simMenuSection === "despachos_outbound" ? "text-[#714B67] bg-purple-50 font-bold" : "text-slate-600"}`}
+                          id="nav_btn_despachos_outbound4"
+                        >
+                          Orden de Despacho (OUT)
+                        </button>
+                        <button 
+                          onClick={() => setSimMenuSection("clientes")}
+                          className={`hover:bg-slate-100 px-2 py-1 rounded font-semibold shrink-0 ${simMenuSection === "clientes" ? "text-[#714B67] bg-purple-50 font-bold" : "text-slate-600"}`}
+                          id="nav_btn_clientes4"
+                        >
+                          Clientes
+                        </button>
+                        <button 
+                          onClick={() => {
+                            if (sim4State.step < 4) {
+                              triggerAlert("Módulo Bloqueado", "Debes completar la validación de despacho y la auditoría de stock (Paso 3) para habilitar el tablero de KPIs.");
+                            } else {
+                              setSimMenuSection("kpis_advanced");
+                            }
+                          }}
+                          className={`hover:bg-slate-100 px-2 py-1 rounded font-semibold shrink-0 ${
+                            sim4State.step < 4 
+                              ? "opacity-40 text-slate-400 cursor-not-allowed" 
+                              : simMenuSection === "kpis_advanced" 
+                                ? "text-[#714B67] bg-purple-50 font-bold" 
+                                : "text-slate-600"
+                          }`}
+                          id="nav_btn_kpis4_tab"
+                        >
+                          Métricas & KPIs
+                        </button>
+                      </div>
+                    ) : currentClass === 3 ? (
                       <div className="flex space-x-4 items-center">
                         <span className="font-bold text-[#714B67] text-sm">Compras</span>
                         <button 
@@ -2500,7 +2776,9 @@ export default function App() {
                           <p className="text-[11px] text-slate-500">Selecciona una aplicación para iniciar la sesión práctica</p>
                         </div>
                         <div className="text-xs font-semibold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg">
-                          Estado: {currentClass === 3 ? (
+                          Estado: {currentClass === 4 ? (
+                            sim4State.step >= 5 ? "Práctica Completa 🎉" : `Paso ${sim4State.step} de 4 en Curso`
+                          ) : currentClass === 3 ? (
                             sim3State.step >= 5 ? "Práctica Completa 🎉" : `Paso ${sim3State.step} de 4 en Curso`
                           ) : currentClass === 2 ? (
                             sim2State.step >= 5 ? "Práctica Completa 🎉" : `Paso ${sim2State.step} de 4 en Curso`
@@ -2512,7 +2790,58 @@ export default function App() {
 
                       {/* Bento Grid Apps Odoo */}
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4" id="odoo_apps_bento">
-                        {currentClass === 3 ? (
+                        {currentClass === 4 ? (
+                          <>
+                            {/* App Ventas / Despachos (Class 4) */}
+                            <button
+                              onClick={() => setSimMenuSection("despachos_outbound")}
+                              className="bg-white hover:bg-[#714B67]/5 hover:border-[#714B67]/40 border border-slate-200 p-4 rounded-xl shadow-xs text-center flex flex-col items-center justify-center gap-2 group transition-all cursor-pointer"
+                              id="app_btn_despachos4"
+                            >
+                              <div className="bg-[#a24689] text-white p-3 rounded-2xl group-hover:scale-105 transition-all shadow-sm">
+                                <Truck className="w-6 h-6" />
+                              </div>
+                              <span className="text-xs font-semibold text-[#714B67] font-sans">Despachos (OUT)</span>
+                              <span className="text-[9px] text-slate-400">Preparación, Control de Calidad y Carga</span>
+                            </button>
+
+                            {/* App Clientes (Class 4) */}
+                            <button
+                              onClick={() => setSimMenuSection("clientes")}
+                              className="bg-white hover:bg-[#714B67]/5 hover:border-[#714B67]/40 border border-slate-200 p-4 rounded-xl shadow-xs text-center flex flex-col items-center justify-center gap-2 group transition-all cursor-pointer"
+                              id="app_btn_clientes4"
+                            >
+                              <div className="bg-[#3b82f6] text-white p-3 rounded-2xl group-hover:scale-105 transition-all shadow-sm">
+                                <Users className="w-6 h-6" />
+                              </div>
+                              <span className="text-xs font-semibold text-slate-800 font-sans">Clientes Logísticos</span>
+                              <span className="text-[9px] text-slate-400">Directorio de entrega y ruteos</span>
+                            </button>
+
+                            {/* App KPIs / Rendimiento (Class 4) */}
+                            <button
+                              onClick={() => {
+                                if (sim4State.step < 4) {
+                                  triggerAlert("Falta Proyecto de Despachos", "Debes completar la validación del despacho del cliente final antes de acceder al panel avanzado de KPIs del almacén.");
+                                } else {
+                                  setSimMenuSection("kpis_advanced");
+                                }
+                              }}
+                              className={`bg-white border p-4 rounded-xl text-center flex flex-col items-center justify-center gap-2 group transition-all cursor-pointer ${
+                                sim4State.step < 4
+                                  ? "opacity-55 hover:bg-slate-50 border-slate-200"
+                                  : "hover:bg-[#714B67]/5 hover:border-[#714B67]/40 border-slate-200"
+                              }`}
+                              id="app_btn_kpis4"
+                            >
+                              <div className="bg-[#f59e0b] text-white p-3 rounded-2xl group-hover:scale-105 transition-all shadow-sm">
+                                <BarChart3 className="w-6 h-6" />
+                              </div>
+                              <span className="text-xs font-semibold text-slate-800 font-sans">Métricas & KPIs</span>
+                              <span className="text-[9px] text-slate-400">Tiempos de empaque y backorders</span>
+                            </button>
+                          </>
+                        ) : currentClass === 3 ? (
                           <>
                             {/* App Compras (Class 3) */}
                             <button
@@ -4126,6 +4455,419 @@ export default function App() {
                             Consolidar y Finalizar Práctica
                           </button>
                         </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CLASS 4: CLIENTES LOGISTICOS VIEW */}
+                  {simState.hasLoggedIn && simMenuSection === "clientes" && currentClass === 4 && (
+                    <div className="w-full bg-white rounded-xl border border-slate-200 shadow-md p-4 text-left text-xs" id="odoo_clientes_class4">
+                      <div className="border-b border-slate-200 pb-2 mb-3 flex justify-between items-center">
+                        <div className="flex items-center space-x-1.5">
+                          <span className="font-bold text-[#714B67] text-sm">Directorio de Clientes Logísticos</span>
+                        </div>
+                        <button 
+                          onClick={() => setSimMenuSection("dashboard")}
+                          className="text-slate-400 hover:text-slate-700 font-bold"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-4 font-sans">
+                        <div className="bg-indigo-50/70 p-3 rounded-lg border border-indigo-200/50 text-indigo-950 text-xs">
+                          <strong>Paso 1: Registrar Cliente de Destino.</strong> El proceso de despacho comienza identificando al destinatario. Registra a <strong>"Construcciones Alfa"</strong> como cliente para iniciar la planificación.
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="space-y-3">
+                            <h5 className="font-bold text-slate-800 uppercase tracking-wider text-[10px]">Nuevo Registro de Cliente</h5>
+                            <div>
+                              <label className="block text-slate-600 font-semibold mb-1">Nombre de la Empresa <strong className="text-red-500">*</strong></label>
+                              <input 
+                                type="text"
+                                placeholder="Escribe 'Construcciones Alfa'"
+                                disabled={sim4State.step >= 2}
+                                value={sim4State.step >= 2 ? "Construcciones Alfa" : c4CustomerNameInput}
+                                onChange={(e) => setC4CustomerNameInput(e.target.value)}
+                                className="w-full border border-slate-300 rounded px-2.5 py-1.5 font-sans text-xs bg-white text-slate-800"
+                                id="field_customer_name_input"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-slate-600 font-semibold mb-1">Dirección / Centro de Acopio</label>
+                              <input 
+                                type="text"
+                                placeholder="Av. Industrial #402, Sector Alfa"
+                                disabled={sim4State.step >= 2}
+                                className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white text-slate-800"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-slate-600 font-semibold mb-1">Ruta de Distribución Asignada</label>
+                              <select 
+                                disabled={sim4State.step >= 2}
+                                className="w-full border border-slate-300 rounded px-2.5 py-1.5 text-xs bg-white text-slate-800"
+                              >
+                                <option>Ruta Express Metropolitana (Zona Centro)</option>
+                                <option>Ruta de Carga Tradicional (Zona Sur)</option>
+                              </select>
+                            </div>
+
+                            {sim4State.step < 2 && (
+                              <button 
+                                type="button"
+                                onClick={() => {
+                                  if (c4CustomerNameInput.trim().toLowerCase() !== "construcciones alfa") {
+                                    triggerAlert(
+                                      "Cliente Incorrecto",
+                                      "Para avanzar, escribe el nombre del cliente indicado para el plan de distribución: 'Construcciones Alfa'."
+                                    );
+                                  } else {
+                                    setSim4State({
+                                      ...sim4State,
+                                      step: 2,
+                                      outboundContact: "Construcciones Alfa"
+                                    });
+                                    triggerAlert(
+                                      "Cliente Registrado",
+                                      "¡Estupendo! 'Construcciones Alfa' ha sido guardado. Ve al dashboard del simulador y abre la app 'Despachos (OUT)' para gestionar y preparar el pedido."
+                                    );
+                                    setSimMenuSection("dashboard");
+                                  }
+                                }}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold transition-all text-xs w-full cursor-pointer"
+                                id="btn_save_customer"
+                              >
+                                Crear Cliente Logístico
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="border border-slate-200 rounded-xl p-3 bg-slate-50 space-y-3">
+                            <h5 className="font-bold text-slate-800 uppercase tracking-wider text-[10px]">Directorio general</h5>
+                            <div className="space-y-2">
+                              <div className="p-2 bg-white rounded-lg border border-slate-200 flex items-center justify-between">
+                                <div>
+                                  <span className="font-bold text-slate-800 block">Sistemas Globales S.A.</span>
+                                  <span className="text-[10px] text-slate-500">Ruta Metropolitana • ID: CUST-001</span>
+                                </div>
+                                <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded-full">Activo</span>
+                              </div>
+                              <div className="p-2 bg-white rounded-lg border border-slate-200 flex items-center justify-between">
+                                <div>
+                                  <span className="font-bold text-slate-800 block">Comercializadora Pacífico</span>
+                                  <span className="text-[10px] text-slate-500">Ruta Costera • ID: CUST-002</span>
+                                </div>
+                                <span className="text-[10px] bg-slate-100 text-slate-600 font-bold px-2 py-0.5 rounded-full">Activo</span>
+                              </div>
+                              {sim4State.step >= 2 && (
+                                <div className="p-2 bg-indigo-50 border border-indigo-200 rounded-lg flex items-center justify-between animate-pulse">
+                                  <div>
+                                    <span className="font-bold text-indigo-900 block">Construcciones Alfa</span>
+                                    <span className="text-[10px] text-indigo-600 block">Ruta Express • ID: CUST-003</span>
+                                  </div>
+                                  <span className="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded-full">Destinatario</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CLASS 4: OUTBOUND DISPATCH VIEW */}
+                  {simState.hasLoggedIn && simMenuSection === "despachos_outbound" && currentClass === 4 && (
+                    <div className="w-full bg-white rounded-xl border border-slate-200 shadow-md p-4 text-left text-xs" id="odoo_despachos_form4">
+                      <div className="border-b border-slate-200 pb-2 mb-3 flex justify-between items-center">
+                        <div className="flex items-center space-x-1.5">
+                          <span className="font-bold text-slate-400 font-sans">Orden de Entrega Saliente (Outbound)</span>
+                          <span className="font-mono text-xs text-slate-900 font-bold bg-slate-100 px-2 py-0.5 rounded">WH/OUT/00401</span>
+                        </div>
+                        <button 
+                          onClick={() => setSimMenuSection("dashboard")}
+                          className="text-slate-400 hover:text-slate-700 font-bold"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-4 font-sans">
+                        <div className="bg-purple-50 p-3 rounded-lg border border-purple-200/50 text-purple-950 text-xs">
+                          {sim4State.step === 2 ? (
+                            <span><strong>Paso 2: Certificación de Envío.</strong> Debes preparar y fiscalizar el despacho de las <strong>5 unidades</strong> del Escritorio de Madera Premium hacia <strong>Construcciones Alfa</strong>. Cumple los controles del picking y empaque.</span>
+                          ) : sim4State.step === 3 ? (
+                            <span><strong>Paso 3: Kárdex Logístico.</strong> El convoy de salida fue liberado. Valida los asentamientos del libro de almacén para asentar la reducción de existencias de 48 a 43.</span>
+                          ) : (
+                            <span>Despacho cerrado contable y operativamente. Procede a comprobar las métricas de rendimiento en <strong>Métricas & KPIs</strong>.</span>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-slate-50 p-3 rounded border border-slate-200">
+                          <div>
+                            <span className="block text-[9px] uppercase font-bold text-slate-400 lg:text-[10px]">Cliente del Pedido</span>
+                            <span className="font-semibold text-slate-900 text-xs">{sim4State.outboundContact || "Construcciones Alfa"}</span>
+                          </div>
+                          <div>
+                            <span className="block text-[9px] uppercase font-bold text-slate-400 lg:text-[10px]">Ruta Marítimo/Terrestre</span>
+                            <span className="font-semibold text-slate-900 text-xs">Ruta Express Metropolitana (Zona Centro)</span>
+                          </div>
+                        </div>
+
+                        {sim4State.step === 2 && (
+                          <div className="space-y-3">
+                            <h5 className="font-bold text-slate-800 uppercase tracking-wider text-[10px]">Auditoría de Control Físico (Hacer Clic para marcar):</h5>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {/* Picking Card */}
+                              <button
+                                type="button"
+                                onClick={() => setC4PickingValidated(!c4PickingValidated)}
+                                className={`p-3.5 text-left rounded-xl border transition-all cursor-pointer ${
+                                  c4PickingValidated 
+                                    ? "bg-emerald-50 border-emerald-500 text-emerald-950" 
+                                    : "bg-white border-slate-200 hover:border-slate-350"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-[10px] uppercase font-mono tracking-wider text-slate-400">FASE 1: PICKING</span>
+                                  <div className={`w-4 h-4 rounded-full flex items-center justify-center ${c4PickingValidated ? "bg-emerald-500 text-white" : "border border-slate-300"}`}>
+                                    {c4PickingValidated && <Check className="w-3 h-3" />}
+                                  </div>
+                                </div>
+                                <span className="font-bold block text-xs">Preparación (Picking)</span>
+                                <span className="text-[10px] text-slate-500 block mt-1 leading-normal">Recolectar exactamente 5 unidades de Escritorio de Madera Premium de WH/Stock Pasillo A.</span>
+                              </button>
+
+                              {/* Packing card */}
+                              <button
+                                type="button"
+                                onClick={() => setC4PackingValidated(!c4PackingValidated)}
+                                className={`p-3.5 text-left rounded-xl border transition-all cursor-pointer ${
+                                  c4PackingValidated 
+                                    ? "bg-emerald-50 border-emerald-500 text-emerald-950" 
+                                    : "bg-white border-slate-200 hover:border-slate-350"
+                                }`}
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <span className="text-[10px] uppercase font-mono tracking-wider text-slate-400">FASE 2: PACKING</span>
+                                  <div className={`w-4 h-4 rounded-full flex items-center justify-center ${c4PackingValidated ? "bg-emerald-500 text-white" : "border border-slate-300"}`}>
+                                    {c4PackingValidated && <Check className="w-3 h-3" />}
+                                  </div>
+                                </div>
+                                <span className="font-bold block text-xs">Acondicionamiento (Packing)</span>
+                                <span className="text-[10px] text-slate-500 block mt-1 leading-normal">Etiquetado logístico con flejes térmicos, sellos de seguridad y embalaje antiderrames.</span>
+                              </button>
+                            </div>
+
+                            <div className="flex justify-end pt-2 border-t border-slate-100">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (!c4PickingValidated || !c4PackingValidated) {
+                                    triggerAlert(
+                                      "Pre-requisito Pendiente",
+                                      "Los procesos físicos de Picking (Fase 1) y Packing (Fase 2) deben ser completados y marcados para habilitar el despacho corporativo."
+                                    );
+                                  } else {
+                                    setSim4State({
+                                      ...sim4State,
+                                      step: 3,
+                                      outboundDone: 5
+                                    });
+                                    triggerAlert(
+                                      "Despacho OUT Validado",
+                                      "¡Correcto! Certificaciones físicas cargadas con éxito. Las 5 unidades han sido despachadas. Paso 3: Revisa el diario de Kárdex para concluir la auditoría."
+                                    );
+                                  }
+                                }}
+                                className="bg-[#a24689] hover:bg-[#8f3977] text-white px-5 py-2 rounded-xl font-bold transition-all cursor-pointer"
+                              >
+                                Despachar y Certificar Carga
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {sim4State.step === 3 && (
+                          <div className="space-y-3">
+                            <h5 className="font-bold text-slate-800 uppercase tracking-wider text-[10px]">Auditoría de Desplazamientos de Stock (Double-Entry Bookkeeping):</h5>
+                            <div className="border border-slate-200 rounded-lg overflow-hidden bg-white">
+                              <table className="w-full text-left text-xs text-slate-700">
+                                <thead className="bg-[#714B67]/5 text-slate-800 font-semibold border-b border-slate-200">
+                                  <tr>
+                                    <th className="p-2 border-r border-slate-200">Kárdex ID</th>
+                                    <th className="p-2 border-r border-slate-200">Origen Interno</th>
+                                    <th className="p-2 border-r border-slate-200">Destino Físico</th>
+                                    <th className="p-2 text-center">Cantidad</th>
+                                    <th className="p-2 text-center">Asiento</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  <tr>
+                                    <td className="p-2 border-r border-slate-200 font-mono font-bold">KDX-98210-OUT</td>
+                                    <td className="p-2 border-r border-slate-200 text-red-700 font-mono">WH/Stock/Pasillo A</td>
+                                    <td className="p-2 border-r border-slate-200 text-slate-500 font-mono">Virtual Locations/Customers</td>
+                                    <td className="p-2 text-center font-bold text-red-600">-5 uds</td>
+                                    <td className="p-2 text-center"><span className="bg-emerald-100 text-emerald-800 text-[9px] px-2.5 py-0.5 rounded-full font-bold">Hecho</span></td>
+                                  </tr>
+                                </tbody>
+                              </table>
+                            </div>
+
+                            <p className="text-[11px] text-slate-500 leading-normal bg-slate-50 p-2.5 rounded border border-slate-200 text-justify">
+                              La aprobación de este movimiento de kárdex debitará permanentemente el stock físico del Pasillo A, actualizando los registros de Odoo a un total neto transaccional de <strong>43 unidades</strong>.
+                            </p>
+
+                            <div className="flex justify-end pt-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setSim4State({
+                                    ...sim4State,
+                                    step: 4,
+                                    outboundValidated: true
+                                  });
+                                  triggerAlert(
+                                    "Kárdex Actualizado",
+                                    "¡Excelente! Movimiento registrado y conciliado en la base de datos fiscal. Paso 4: Selecciona la pestaña 'Métricas & KPIs' para auditar los reportes gráficos de backorders y consolidar la sesión."
+                                  );
+                                }}
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2 rounded-xl font-bold transition-all cursor-pointer"
+                              >
+                                Conciliar Kárdex y Cerrar OUT
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {sim4State.step >= 4 && (
+                          <div className="bg-emerald-50 rounded-xl p-5 border border-emerald-200 text-center space-y-2">
+                            <div className="w-10 h-10 bg-emerald-500 text-white rounded-full flex items-center justify-center text-lg mx-auto">✓</div>
+                            <h4 className="font-bold text-emerald-900 font-sans">Ciclo de Despacho Outbound Concluido</h4>
+                            <p className="text-slate-650 text-xs max-w-sm mx-auto leading-normal">
+                              La orden de salida WH/OUT/00401 hacia Construcciones Alfa fue completada. Se validaron los controles físicos (picking/packing) y el saldo total disponible se fijó en 43 escritorios de madera. Las evaluaciones están listas en el panel de KPIs.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CLASS 4: KPIS ADVANCED VIEW */}
+                  {simState.hasLoggedIn && simMenuSection === "kpis_advanced" && currentClass === 4 && (
+                    <div className="w-full bg-white rounded-xl border border-slate-200 shadow-md p-4 text-left text-xs" id="odoo_kpis_form4">
+                      <div className="border-b border-slate-200 pb-2 mb-3 flex justify-between items-center bg-slate-50 p-2 rounded">
+                        <span className="font-bold text-[#f59e0b] text-sm">Panel Estratégico de Indicadores Logísticos (Odoo KPIs)</span>
+                      </div>
+
+                      <div className="space-y-4 font-sans">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div className="bg-slate-50 border border-slate-200 p-3 rounded-lg text-center">
+                            <span className="block text-[10px] text-slate-400 font-bold uppercase">OTIF (Salida Perfecta)</span>
+                            <span className="text-xl font-bold font-mono text-emerald-600">98.2%</span>
+                            <span className="text-[9px] text-slate-500 block mt-0.5">Entregas perfectas</span>
+                          </div>
+                          <div className="bg-slate-50 border border-slate-200 p-3 rounded-lg text-center">
+                            <span className="block text-[10px] text-slate-400 font-bold uppercase">Ciclo de Picking</span>
+                            <span className="text-xl font-bold font-mono text-indigo-600">14.8 min</span>
+                            <span className="text-[9px] text-slate-500 block mt-0.5">Media por pedido</span>
+                          </div>
+                          <div className="bg-slate-50 border border-slate-200 p-3 rounded-lg text-center">
+                            <span className="block text-[10px] text-slate-400 font-bold uppercase">Pedidos Pendientes</span>
+                            <span className="text-xl font-bold font-mono text-slate-800">0.0%</span>
+                            <span className="text-[9px] text-slate-500 block mt-0.5 font-sans">Backorders generados</span>
+                          </div>
+                          <div className="bg-slate-50 border border-slate-200 p-3 rounded-lg text-center">
+                            <span className="block text-[10px] text-slate-400 font-bold uppercase">Pérdida por Mermas</span>
+                            <span className="text-xl font-bold font-mono text-ref-650 text-red-600">4.0%</span>
+                            <span className="text-[9px] text-slate-500 block block mt-0.5">2 escritorios dañados</span>
+                          </div>
+                        </div>
+
+                        <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                          <h6 className="font-bold text-[#714B67] mb-1 font-sans">Estudio Logístico Final:</h6>
+                          <p className="text-slate-650 text-justify text-xs leading-normal font-sans">
+                            Con la distribución de las 5 unidades terminada, se reitera la consistencia técnica de las operaciones logísticas. Las existencias se redujeron a un nivel óptimo de 43 escritorios de madera sin roturas de stock o incidencias de rotación. El picking promedio se fijó en 14.8 minutos por pallet, superando en un 12% la métrica corporativa usual de 17.5 minutos.
+                          </p>
+                        </div>
+
+                        <div className="flex justify-end pt-2 border-t border-slate-100">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSim4State({
+                                ...sim4State,
+                                step: 5
+                              });
+                              triggerAlert(
+                                "Módulo Consolidado",
+                                "¡Felicitaciones! Has consolidado con matrícula de honor la Clase 4 de Logística en Odoo. Pulsa Aceptar para certificar tu grado en el portal."
+                              );
+                              setSimMenuSection("dashboard");
+                            }}
+                            className="bg-[#714B67] hover:bg-[#5f3e56] text-white px-5 py-2.5 rounded-xl font-bold text-xs cursor-pointer"
+                            id="btn_complete_class4"
+                          >
+                            Consolidar y Finalizar Práctica de Clase 4
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CLASS 4 COMPLETED GRADUATION CONGRATULATIONS SCREEN */}
+                  {simState.hasLoggedIn && sim4State.step === 5 && simMenuSection === "dashboard" && (
+                    <div className="w-full max-w-md bg-white border border-slate-200 rounded-2xl shadow-xl p-6 my-auto text-center space-y-4" id="sim_complete_panel_class4">
+                      <div className="w-16 h-16 bg-gradient-to-tr from-indigo-500 to-sky-400 text-white rounded-full flex items-center justify-center text-3xl shadow-lg shadow-indigo-500/15 mx-auto animate-bounce">
+                        🎓
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="text-slate-950 font-bold text-lg">¡Felicidades, Máster de Odoo Logística!</h4>
+                        <p className="text-xs text-slate-500 leading-normal">
+                          Has completado el Módulo 4: Gestión de Despachos y Operaciones Logísticas, finalizando con éxito el curso escolar práctico.
+                        </p>
+                      </div>
+
+                      <div className="bg-slate-50 text-slate-700 text-xs border border-slate-200 border-dashed rounded-xl p-3 text-left space-y-1.5 leading-relaxed" id="class4_completion_report">
+                        <strong className="text-slate-900 font-bold block border-b border-slate-200 pb-1">Reporte de Despachos y Operaciones OUT:</strong>
+                        <div className="flex items-center space-x-1.5 text-[11px]">
+                          <Check className="w-3.5 h-3.5 text-emerald-600 font-bold" />
+                          <span>Cliente logístico Construcciones Alfa validado.</span>
+                        </div>
+                        <div className="flex items-center space-x-1.5 text-[11px]">
+                          <Check className="w-3.5 h-3.5 text-emerald-600 font-bold" />
+                          <span>Consolidación física (Picking y Packing en Pasillo A).</span>
+                        </div>
+                        <div className="flex items-center space-x-1.5 text-[11px]">
+                          <Check className="w-3.5 h-3.5 text-emerald-600 font-bold" />
+                          <span>Auditoría de existencias Kárdex OUT cerrada a 43 uds.</span>
+                        </div>
+                        <div className="flex items-center space-x-1.5 text-[11px]">
+                          <Check className="w-3.5 h-3.5 text-emerald-600 font-bold" />
+                          <span>Métricas del almacén analizadas (OTIF 98.2%, Picking 14.8m).</span>
+                        </div>
+                      </div>
+
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            setSimMenuSection("despachos_outbound");
+                          }}
+                          className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-semibold py-2 rounded-lg text-xs border border-slate-300 cursor-pointer"
+                          id="btn_view_sandbox_class4"
+                        >
+                          Explorar Despachos
+                        </button>
+                        <button
+                          onClick={() => {
+                            setActiveTab("teoria");
+                          }}
+                          className="flex-1 bg-[#714B67] hover:bg-[#52354a] text-white font-semibold py-2 rounded-lg text-xs cursor-pointer"
+                          id="btn_back_to_lessons_class4"
+                        >
+                          Ir al Temario Teórico
+                        </button>
                       </div>
                     </div>
                   )}
