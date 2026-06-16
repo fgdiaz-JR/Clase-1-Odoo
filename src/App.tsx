@@ -297,8 +297,13 @@ export default function App() {
   // Tutor Chat state
   const [chatInput, setChatInput] = useState("");
   const [chatMessagesClass1, setChatMessagesClass1] = useState<ChatMessage[]>(() => {
-    const saved = localStorage.getItem("odoo_lessons_chat_1");
-    return saved ? JSON.parse(saved) : [
+    try {
+      const saved = localStorage.getItem("odoo_lessons_chat_1");
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error("Error parsing odoo_lessons_chat_1 from localStorage:", e);
+    }
+    return [
       {
         id: "welcome",
         role: "model",
@@ -312,8 +317,13 @@ export default function App() {
   });
 
   const [chatMessagesClass2, setChatMessagesClass2] = useState<ChatMessage[]>(() => {
-    const saved = localStorage.getItem("odoo_lessons_chat_2");
-    return saved ? JSON.parse(saved) : [
+    try {
+      const saved = localStorage.getItem("odoo_lessons_chat_2");
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error("Error parsing odoo_lessons_chat_2 from localStorage:", e);
+    }
+    return [
       {
         id: "welcome",
         role: "model",
@@ -326,8 +336,13 @@ export default function App() {
   });
 
   const [chatMessagesClass3, setChatMessagesClass3] = useState<ChatMessage[]>(() => {
-    const saved = localStorage.getItem("odoo_lessons_chat_3");
-    return saved ? JSON.parse(saved) : [
+    try {
+      const saved = localStorage.getItem("odoo_lessons_chat_3");
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error("Error parsing odoo_lessons_chat_3 from localStorage:", e);
+    }
+    return [
       {
         id: "welcome",
         role: "model",
@@ -400,6 +415,13 @@ export default function App() {
       document.title = "Logística y Almacenes con Odoo WMS - Portal Académico";
     }
   }, [currentClass]);
+
+  // Keep lesson index within bounds when switching classes
+  useEffect(() => {
+    if (currentClass !== null && currentLessonIndex >= lessonsList.length) {
+      setCurrentLessonIndex(0);
+    }
+  }, [currentClass, lessonsList.length, currentLessonIndex]);
 
   // Scroll chat to bottom
   useEffect(() => {
@@ -1675,8 +1697,13 @@ export default function App() {
                   <button
                     disabled={currentLessonIndex === 0}
                     onClick={() => {
-                      setCurrentLessonIndex(prev => prev - 1);
-                      handleMarkLessonRead(lessonsList[currentLessonIndex - 1].id);
+                      if (currentLessonIndex > 0) {
+                        setCurrentLessonIndex(prev => prev - 1);
+                        const prevLesson = lessonsList[currentLessonIndex - 1];
+                        if (prevLesson) {
+                          handleMarkLessonRead(prevLesson.id);
+                        }
+                      }
                     }}
                     className={`flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs transition-all ${
                       currentLessonIndex === 0
@@ -1696,8 +1723,13 @@ export default function App() {
                   {currentLessonIndex < totalLessonsCount - 1 ? (
                     <button
                       onClick={() => {
-                        setCurrentLessonIndex(prev => prev + 1);
-                        handleMarkLessonRead(lessonsList[currentLessonIndex + 1].id);
+                        if (currentLessonIndex < totalLessonsCount - 1) {
+                          setCurrentLessonIndex(prev => prev + 1);
+                          const nextLesson = lessonsList[currentLessonIndex + 1];
+                          if (nextLesson) {
+                            handleMarkLessonRead(nextLesson.id);
+                          }
+                        }
                       }}
                       className={`flex items-center space-x-1.5 text-white px-4 py-2 rounded-xl text-xs font-semibold transition-all shadow-md ${
                         currentClass === 2
