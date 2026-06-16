@@ -26,10 +26,14 @@ import {
   Lock,
   Plus,
   Lightbulb,
-  Warehouse
+  Warehouse,
+  ShoppingCart,
+  Users,
+  Trash2
 } from "lucide-react";
 import { lessonsData } from "./data/lessons";
 import { lessonsClass2Data } from "./data/lessonsClass2";
+import { lessonsClass3Data } from "./data/lessonsClass3";
 import { Lesson, OdooLocation, OdooProduct, ChatMessage, SimulatorState } from "./types";
 
 const simulatorHints = [
@@ -71,6 +75,72 @@ const simulatorHints = [
   }
 ];
 
+const class2Hints = [
+  {
+    step: 0,
+    title: "Paso 1: Recepción de mercancía manual",
+    shortHint: "Dirígete a Inventario -> Recepciones, abre la recepción y llena la información de llegada.",
+    detailedHint: "Inicia sesión. Luego, abre la aplicación de 'Inventario' y selecciona 'Recepciones'. Ingresa un nombre de contacto proveedor (ej: 'Proveedor Logístico del Norte'), selecciona el producto 'Escritorio de Madera Premium', digita '19' en la demanda y haz clic en 'Validar' para pasar el estado a 'Hecho'."
+  },
+  {
+    step: 1,
+    title: "Paso 2: Ajuste de Inventario (Conciliación física)",
+    shortHint: "Navega a Operaciones -> Ajustes de Inventario para auditar y corregir discrepancias.",
+    detailedHint: "Ve a la pestaña superior 'Ajustes de Inventario' o haz clic en el menú correspondiente. Haz clic en 'Nuevo', añade una línea para 'Escritorio de Madera Premium', escribe '20' en el conteo real (corrigiendo la unidad faltante) y haz clic en 'Aplicar' para asentar el saldo lógico."
+  },
+  {
+    step: 2,
+    title: "Paso 3: Transferencia a Desechos (Scrap/Mermas)",
+    shortHint: "Registra la rotura defectuosa de 1 unidad enviándola a la ubicación virtual de Desechos.",
+    detailedHint: "Crea una transferencia de Desecho (Scrap). Haz clic en el botón 'Desechar' desde productos o ve a Acciones -> Desechar, selecciona 'Escritorio de Madera Premium' con cantidad de '1', y confírmalo. Esto moverá el stock y dejará '19' unidades en tu almacén real."
+  },
+  {
+    step: 3,
+    title: "Paso 4: Auditoría de Reporte de Stock",
+    shortHint: "Ingresa en el listado de Productos para verificar el saldo y ver el historial de movimientos.",
+    detailedHint: "Ve a la sección 'Productos' en el menú superior, haz clic en 'Escritorio de Madera Premium' y confírma que la cantidad a mano es exactamente 19. Al hacer clic en el botón para ver su historial, podrás apreciar la auditoría perfecta de los movimientos."
+  },
+  {
+    step: 4,
+    title: "¡Doble Partida Dominada!",
+    shortHint: "Has completado la práctica guiada de control de existencias físicas.",
+    detailedHint: "¡Felicitaciones! Has completado todos los pasos de la Clase 2. Aprendiste a recibir mercancías, conciliar inventario con ajustes y procesar mermas mediante ubicaciones virtuales de desecho."
+  }
+];
+
+const class3Hints = [
+  {
+    step: 0,
+    title: "Paso 1: Dar de Alta al Proveedor",
+    shortHint: "Dirígete al módulo de Compras -> Proveedores y crea el nuevo contacto.",
+    detailedHint: "Ve a Compras -> Pedidos -> Proveedores, haz clic en 'Nuevo', rellena 'Distribuidora Continental S.A.S.' como Nombre de la Compañía y haz clic en 'Guardar' (icono de disco o botón guardar)."
+  },
+  {
+    step: 1,
+    title: "Paso 2: Elaborar Orden de Compra (OC)",
+    shortHint: "Crea una Solicitud de Cotización (SdC) para 10 de Escritorio de Madera Premium y confírmala.",
+    detailedHint: "En Compras -> Peticiones de Presupuesto, haz clic en 'Nuevo'. Selecciona a 'Distribuidora Continental S.A.S.', agrega el producto 'Escritorio de Madera Premium' con cantidad de 10 y haz clic en 'Confirmar Orden'. Cambiará a 'Orden de Compra' y aparecerá el botón 'Recepción'."
+  },
+  {
+    step: 2,
+    title: "Paso 3: Validar Recepción Física",
+    shortHint: "Entra a la Recepción generada y valida la llegada de las 10 unidades físicamente.",
+    detailedHint: "Haz clic en el camión de 'Recepción' arriba a la derecha (o ve a Inventario -> Recepciones), busca la orden de compra, escribe '10' en la columna 'Hecho' y haz clic en 'Validar' para pasar a 'Hecho'."
+  },
+  {
+    step: 3,
+    title: "Paso 4: Auditoría de Existencias",
+    shortHint: "Ingresa al producto en el Inventario para verificar que el stock aumentó a 29 unidades.",
+    detailedHint: "Ve a Inventario -> Productos, abre 'Escritorio de Madera Premium' y comprueba que el stock físico 'A Mano' (On Hand) sume exactamente 29 unidades (las 19 que traías de Clase 2 + las 10 recibidas). ¡Felicidades, completaste la cadena!"
+  },
+  {
+    step: 4,
+    title: "¡Felicidades!",
+    shortHint: "Abastecimiento automatizado real completado con éxito.",
+    detailedHint: "Has aprendido cómo compras e inventario operan de forma bidireccional y continua. ¡Ya dominas el circuito de aprovisionamiento de Odoo!"
+  }
+];
+
 export default function App() {
   // Navigation Tabs
   const [currentClass, setCurrentClass] = useState<number | null>(null);
@@ -98,6 +168,21 @@ export default function App() {
     forecastedQuantity: 0,
     adjustmentRealCount: 20,
     adjustmentApplied: false,
+    menuSection: "dashboard"
+  });
+
+  // Simulator Class 3 State
+  const [sim3State, setSim3State] = useState<any>({
+    step: 1, // 1 to 5
+    providerName: "",
+    purchaseQty: 10,
+    hasConfirmedOC: false,
+    receivedQty: 0,
+    hasValidatedReceipt: false,
+    viewedFinalStock: false,
+    partners: [] as any[],
+    purchaseOrders: [] as any[],
+    receipts: [] as any[],
     menuSection: "dashboard"
   });
 
@@ -137,7 +222,7 @@ export default function App() {
   const [loginError, setLoginError] = useState("");
   
   // For Simulator step 2: setting page switch
-  const [simMenuSection, setSimMenuSection] = useState<"dashboard" | "ajustes" | "inventario" | "ubicaciones" | "productos_list" | "producto_form" | "ubicacion_form" | "almacenes" | "almacen_form">("dashboard");
+  const [simMenuSection, setSimMenuSection] = useState<string>("dashboard");
   const [settingsCheckLocations, setSettingsCheckLocations] = useState(false);
   const [settingsSaved, setSettingsSaved] = useState(false);
 
@@ -165,6 +250,16 @@ export default function App() {
   const [prodFormSold, setProdFormSold] = useState(true);
   const [prodFormBought, setProdFormBought] = useState(true);
   const [prodValidationMessage, setProdValidationMessage] = useState("");
+
+  // Interactive states for Class 3 purchases & logistics WMS
+  const [c3ProviderNameInput, setC3ProviderNameInput] = useState("");
+  const [c3PurchaseQtyInput, setC3PurchaseQtyInput] = useState<number>(250);
+  const [c3ReceivedQtyInput, setC3ReceivedQtyInput] = useState<number>(250);
+  const [c3SelectedPO, setC3SelectedPO] = useState<string>("OC-0001");
+
+  // Interactive states for Class 2 stock audits & scrap/mermas
+  const [c2AjusteRealCountInput, setC2AjusteRealCountInput] = useState<number>(50);
+  const [c2MermaQtyInput, setC2MermaQtyInput] = useState<number>(2);
 
   // Custom modal dialog state to replace native alert/confirm on mobile platforms
   const [modal, setModal] = useState<{
@@ -230,9 +325,31 @@ export default function App() {
     ];
   });
 
-  const chatMessages = currentClass === 2 ? chatMessagesClass2 : chatMessagesClass1;
+  const [chatMessagesClass3, setChatMessagesClass3] = useState<ChatMessage[]>(() => {
+    const saved = localStorage.getItem("odoo_lessons_chat_3");
+    return saved ? JSON.parse(saved) : [
+      {
+        id: "welcome",
+        role: "model",
+        text: "¡Hola! Bienvenido a la **Clase 3: Procesos de Compras y Abastecimiento**.\n\n" +
+          "Aquí abordaremos la relación entre compras y almacenes, gestión de proveedores, cotizaciones (SdC), órdenes de compra (PO), control documental (Triple Verificación) y recepciones físicas con Odoo.\n\n" +
+          "¿Tiene alguna pregunta sobre la teoría o pasamos directo a estudiar?",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ];
+  });
+
+  const chatMessages = 
+    currentClass === 3 
+      ? chatMessagesClass3 
+      : currentClass === 2 
+        ? chatMessagesClass2 
+        : chatMessagesClass1;
+
   const setChatMessages = (updater: any) => {
-    if (currentClass === 2) {
+    if (currentClass === 3) {
+      setChatMessagesClass3(updater);
+    } else if (currentClass === 2) {
       setChatMessagesClass2(updater);
     } else {
       setChatMessagesClass1(updater);
@@ -252,13 +369,24 @@ export default function App() {
     }
   }, [chatMessagesClass2]);
 
+  useEffect(() => {
+    if (chatMessagesClass3.length > 0) {
+      localStorage.setItem("odoo_lessons_chat_3", JSON.stringify(chatMessagesClass3));
+    }
+  }, [chatMessagesClass3]);
+
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [chatError, setChatError] = useState("");
   
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Dynamically resolve lessons for the active class
-  const lessonsList = currentClass === 2 ? lessonsClass2Data : lessonsData;
+  const lessonsList = 
+    currentClass === 3 
+      ? lessonsClass3Data 
+      : currentClass === 2 
+        ? lessonsClass2Data 
+        : lessonsData;
 
   // Synchronize browser tab title for Clase
   useEffect(() => {
@@ -266,6 +394,8 @@ export default function App() {
       document.title = "Clase 1: Introducción a la Logística y al Módulo de Inventario - Odoo WMS";
     } else if (currentClass === 2) {
       document.title = "Clase 2: Gestión de Inventarios y Control de Existencias - Odoo WMS";
+    } else if (currentClass === 3) {
+      document.title = "Clase 3: Procesos de Compras y Abastecimiento - Odoo WMS";
     } else {
       document.title = "Logística y Almacenes con Odoo WMS - Portal Académico";
     }
@@ -659,11 +789,13 @@ export default function App() {
     return acc + l.quiz.filter(q => completedQuizzes[q.id]).length;
   }, 0);
 
-  const simStepsCompleted = currentClass === 2 
-    ? (sim2State.step === 5 ? 4 : sim2State.step - 1)
-    : simState.activeStep;
+  const simStepsCompleted = currentClass === 3
+    ? (sim3State.step === 5 ? 4 : sim3State.step - 1)
+    : currentClass === 2 
+      ? (sim2State.step === 5 ? 4 : sim2State.step - 1)
+      : simState.activeStep;
 
-  const maxSimSteps = currentClass === 2 ? 4 : 5;
+  const maxSimSteps = currentClass === 3 ? 4 : (currentClass === 2 ? 4 : 5);
 
   const overallProgressPercent = Math.min(
     100,
@@ -692,6 +824,15 @@ export default function App() {
       ((sim2CompletedCount / 4) * 30)
     ));
 
+    const readClass3Count = [201, 202, 203, 204, 205].filter(id => completedLessons[id]).length;
+    const quizClass3PassedCount = ["q3_201_1", "q3_201_2", "q3_202_1", "q3_202_2", "q3_203_1", "q3_203_2", "q3_204_1", "q3_204_2", "q3_205_1", "q3_205_2"].filter(id => completedQuizzes[id]).length;
+    const sim3CompletedCount = sim3State.step === 5 ? 4 : sim3State.step - 1;
+    const class3ProgressPercent = Math.min(100, Math.round(
+      ((readClass3Count / 5) * 40) +
+      ((quizClass3PassedCount / 10) * 30) +
+      ((sim3CompletedCount / 4) * 30)
+    ));
+
     return (
       <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col font-sans selection:bg-purple-600 selection:text-white" id="portal_container">
         {/* Portal Header */}
@@ -718,7 +859,7 @@ export default function App() {
               <div className="text-right">
                 <span className="block text-[10px] uppercase font-bold text-slate-400 tracking-wider">Tu Progreso Global</span>
                 <span className="text-xl font-bold text-white font-mono">
-                  {Math.round((class1ProgressPercent + class2ProgressPercent) / 2)}%
+                  {Math.round((class1ProgressPercent + class2ProgressPercent + class3ProgressPercent) / 3)}%
                 </span>
               </div>
               <div className="w-10 h-10 bg-purple-500/10 rounded-xl border border-purple-500/20 flex items-center justify-center">
@@ -860,30 +1001,57 @@ export default function App() {
                 </button>
               </div>
 
-              {/* CLASE 3 - locked */}
-              <div className="bg-slate-950/20 border border-slate-800/40 rounded-3xl p-6 relative flex flex-col justify-between opacity-60 filter grayscale-[20%]" id="class_card_3">
+              {/* CLASE 3 */}
+              <div className="bg-slate-950/60 rounded-3xl border border-slate-800/80 hover:border-emerald-500/30 transition-all p-6 relative flex flex-col justify-between group shadow-xl" id="class_card_3">
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold tracking-widest text-slate-500 uppercase font-sans">Clase 3</span>
-                    <span className="bg-slate-800 text-slate-400 border border-slate-700/50 text-[10px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                      <Lock className="w-3 h-3" /> Próximamente
-                    </span>
+                    <span className="text-xs font-bold tracking-widest text-emerald-400 uppercase font-sans">Clase 3</span>
+                    <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[10px] font-bold px-2.5 py-0.5 rounded-full">Activa</span>
                   </div>
                   <div className="space-y-1">
-                    <h4 className="text-md font-bold text-slate-300 font-sans">3. Gestión de Abastecimiento y Compras</h4>
-                    <p className="text-xs text-slate-500 leading-relaxed font-sans">
-                      Aprende a prever demandas, configurar reglas automáticas de reordenación de stock para activar auto-compras sin intervención humana, y recibir de cara al proveedor.
+                    <h4 className="text-md font-bold text-white group-hover:text-emerald-300 transition-colors font-sans font-sans">3. Procesos de Compras y Abastecimiento</h4>
+                    <p className="text-xs text-slate-400 leading-relaxed font-sans mt-1 text-justify">
+                      Gestiona el ciclo de abastecimiento de punta a punta: desde dar de alta un proveedor, elaborar Solicitudes de Cotización (SdC), formalizar Órdenes de Compra (PO) y validar la recepción de existencias en el almacén.
                     </p>
+                  </div>
+
+                  {/* Metrics progress bar */}
+                  <div className="bg-slate-900 border border-slate-800/60 rounded-2xl p-4 space-y-3">
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="text-slate-500">Completado:</span>
+                      <span className="text-white font-bold">{class3ProgressPercent}%</span>
+                    </div>
+                    <div className="bg-slate-850 rounded-full h-2 overflow-hidden w-full">
+                      <div className="bg-emerald-600 h-full rounded-full transition-all" style={{ width: `${class3ProgressPercent}%` }}></div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 pt-1 text-[10px] text-center font-mono">
+                      <div>
+                        <span className="block text-[9px] text-slate-500 uppercase font-bold">Teoría</span>
+                        <span className="text-slate-300">{readClass3Count}/5</span>
+                      </div>
+                      <div>
+                        <span className="block text-[9px] text-slate-500 uppercase font-bold">Quizzes</span>
+                        <span className="text-slate-300">{quizClass3PassedCount}/10</span>
+                      </div>
+                      <div>
+                        <span className="block text-[9px] text-slate-500 uppercase font-bold">Práctica</span>
+                        <span className="text-slate-300">{sim3CompletedCount}/4</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
                 <button
-                  disabled
-                  className="mt-6 w-full bg-slate-800 text-slate-500 font-bold text-xs py-3 px-4 rounded-xl cursor-not-allowed text-center flex items-center justify-center gap-2 border border-slate-800"
+                  onClick={() => {
+                    setCurrentClass(3);
+                    setCurrentLessonIndex(0);
+                    setActiveTab("teoria");
+                  }}
+                  className="mt-6 w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs py-3 px-4 rounded-xl transition-all shadow-lg hover:shadow-emerald-600/15 text-center flex items-center justify-center gap-2 cursor-pointer"
                   id="btn_enter_class_3"
                 >
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>Módulo Bloqueado</span>
+                  <span>{class3ProgressPercent > 0 ? "Reanudar Clase 3" : "Iniciar Clase 3"}</span>
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
 
@@ -1603,97 +1771,240 @@ export default function App() {
               </div>
 
               {/* Progress Checklist for steps */}
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 bg-slate-950 p-3 rounded-2xl border border-slate-800/80 shadow-inner" id="sim_steps_indicator">
-                
-                {/* Paso 1: Login */}
-                <div className={`p-2 rounded-xl border text-center transition-all relative ${
-                  simState.activeStep >= 1 
-                    ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400" 
-                    : simState.activeStep === 0 
-                      ? "bg-purple-950/40 border-purple-500 text-white shadow-lg shadow-purple-500/10 font-bold" 
-                      : "bg-slate-900/20 border-slate-900 text-slate-600"
-                }`} id="step_indicator_1">
-                  <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 1</div>
-                  <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
-                    {simState.activeStep >= 1 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
-                    Iniciar Sesión
+              {currentClass === 3 ? (
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 bg-slate-950 p-3 rounded-2xl border border-slate-800/80 shadow-inner" id="sim_steps_indicator">
+                  {/* Class 3 Steps */}
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    sim3State.step >= 2
+                      ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400"
+                      : sim3State.step === 1
+                        ? "bg-emerald-950/40 border-emerald-500 text-white shadow-lg shadow-emerald-500/10 font-bold"
+                        : "bg-slate-900/20 border-slate-900 text-slate-600"
+                  }`} id="class3_step_1">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 1</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {sim3State.step >= 2 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
+                      Crear Proveedor
+                    </div>
                   </div>
-                </div>
-                
-                {/* Paso 2: Activar Ubicaciones */}
-                <div className={`p-2 rounded-xl border text-center transition-all relative ${
-                  simState.activeStep >= 2 
-                    ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400" 
-                    : simState.activeStep === 1 
-                      ? "bg-purple-950/40 border-purple-500 text-white shadow-lg shadow-purple-500/10 font-bold" 
-                      : "bg-slate-900/20 border-slate-900 text-slate-600"
-                }`} id="step_indicator_2">
-                  <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 2</div>
-                  <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
-                    {simState.activeStep >= 2 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
-                    Ajustar Almacén
-                  </div>
-                </div>
 
-                {/* Paso 3: Crear Almacén */}
-                <div className={`p-2 rounded-xl border text-center transition-all relative ${
-                  simState.activeStep >= 3 
-                    ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400" 
-                    : simState.activeStep === 2 
-                      ? "bg-purple-950/40 border-purple-500 text-white shadow-lg shadow-purple-500/10 font-bold" 
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    sim3State.step >= 3
+                      ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400"
+                      : sim3State.step === 2
+                        ? "bg-emerald-950/40 border-emerald-500 text-white shadow-lg shadow-emerald-500/10 font-bold"
+                        : "bg-slate-900/20 border-slate-900 text-slate-600"
+                  }`} id="class3_step_2">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 2</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {sim3State.step >= 3 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
+                      Orden de Compra
+                    </div>
+                  </div>
+
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    sim3State.step >= 4
+                      ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400"
+                      : sim3State.step === 3
+                        ? "bg-emerald-950/40 border-emerald-500 text-white shadow-lg shadow-emerald-500/10 font-bold"
+                        : "bg-slate-900/20 border-slate-900 text-slate-600"
+                  }`} id="class3_step_3">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 3</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {sim3State.step >= 4 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
+                      Validar Recepción
+                    </div>
+                  </div>
+
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    sim3State.step >= 5
+                      ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400"
+                      : sim3State.step === 4
+                        ? "bg-emerald-950/40 border-emerald-500 text-white shadow-lg shadow-emerald-500/10 font-bold"
+                        : "bg-slate-900/20 border-slate-900 text-slate-600"
+                  }`} id="class3_step_4">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 4</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {sim3State.step >= 5 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
+                      Auditar Stock
+                    </div>
+                  </div>
+
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    sim3State.step >= 5
+                      ? "bg-gradient-to-r from-emerald-500/20 to-sky-500/20 border-emerald-400 text-emerald-300 font-bold"
                       : "bg-slate-900/20 border-slate-900 text-slate-600"
-                }`} id="step_indicator_3">
-                  <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 3</div>
-                  <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
-                    {simState.activeStep >= 3 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
-                    Crear Almacén
+                  }`} id="class3_step_5">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Resultado</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {sim3State.step >= 5 ? <Award className="w-3.5 h-3.5 text-emerald-400 animate-bounce" /> : null}
+                      ¡Dominado!
+                    </div>
                   </div>
                 </div>
+              ) : currentClass === 2 ? (
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 bg-slate-950 p-3 rounded-2xl border border-slate-800/80 shadow-inner" id="sim_steps_indicator">
+                  {/* Class 2 Steps */}
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    sim2State.step >= 2 
+                      ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400" 
+                      : sim2State.step === 1 
+                        ? "bg-blue-950/40 border-blue-500 text-white shadow-lg shadow-blue-500/10 font-bold" 
+                        : "bg-slate-900/20 border-slate-900 text-slate-600"
+                  }`} id="class2_step_1">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 1</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {sim2State.step >= 2 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
+                      Recibir Mercancía
+                    </div>
+                  </div>
 
-                {/* Paso 4: Crear Ubicación */}
-                <div className={`p-2 rounded-xl border text-center transition-all relative ${
-                  simState.activeStep >= 4 
-                    ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400" 
-                    : simState.activeStep === 3 
-                      ? "bg-purple-950/40 border-purple-500 text-white shadow-lg shadow-purple-500/10 font-bold" 
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    sim2State.step >= 3 
+                      ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400" 
+                      : sim2State.step === 2 
+                        ? "bg-blue-950/40 border-blue-500 text-white shadow-lg shadow-blue-500/10 font-bold" 
+                        : "bg-slate-900/20 border-slate-900 text-slate-600"
+                  }`} id="class2_step_2">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 2</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {sim2State.step >= 3 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
+                      Ajuste de Stock
+                    </div>
+                  </div>
+
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    sim2State.step >= 4 
+                      ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400" 
+                      : sim2State.step === 3 
+                        ? "bg-blue-950/40 border-blue-500 text-white shadow-lg shadow-blue-500/10 font-bold" 
+                        : "bg-slate-900/20 border-slate-900 text-slate-600"
+                  }`} id="class2_step_3">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 3</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {sim2State.step >= 4 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
+                      Procesar Mermas
+                    </div>
+                  </div>
+
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    sim2State.step >= 5 
+                      ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400" 
+                      : sim2State.step === 4 
+                        ? "bg-blue-950/40 border-blue-500 text-white shadow-lg shadow-blue-500/10 font-bold" 
+                        : "bg-slate-900/20 border-slate-900 text-slate-600"
+                  }`} id="class2_step_4">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 4</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {sim2State.step >= 5 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
+                      Auditar Reporte
+                    </div>
+                  </div>
+
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    sim2State.step >= 5 
+                      ? "bg-gradient-to-r from-emerald-500/20 to-sky-500/20 border-emerald-400 text-emerald-300 font-bold" 
                       : "bg-slate-900/20 border-slate-900 text-slate-600"
-                }`} id="step_indicator_4">
-                  <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 4</div>
-                  <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
-                    {simState.activeStep >= 4 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
-                    Crear Ubicación
+                  }`} id="class2_step_5">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Resultado</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {sim2State.step >= 5 ? <Award className="w-3.5 h-3.5 text-emerald-400 animate-bounce" /> : null}
+                      ¡Logrado!
+                    </div>
                   </div>
                 </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 bg-slate-950 p-3 rounded-2xl border border-slate-800/80 shadow-inner" id="sim_steps_indicator">
+                  
+                  {/* Paso 1: Login */}
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    simState.activeStep >= 1 
+                      ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400" 
+                      : simState.activeStep === 0 
+                        ? "bg-purple-950/40 border-purple-500 text-white shadow-lg shadow-purple-500/10 font-bold" 
+                        : "bg-slate-900/20 border-slate-900 text-slate-600"
+                  }`} id="step_indicator_1">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 1</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {simState.activeStep >= 1 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
+                      Iniciar Sesión
+                    </div>
+                  </div>
+                  
+                  {/* Paso 2: Activar Ubicaciones */}
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    simState.activeStep >= 2 
+                      ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400" 
+                      : simState.activeStep === 1 
+                        ? "bg-purple-950/40 border-purple-500 text-white shadow-lg shadow-purple-500/10 font-bold" 
+                        : "bg-slate-900/20 border-slate-900 text-slate-600"
+                  }`} id="step_indicator_2">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 2</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {simState.activeStep >= 2 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
+                      Ajustar Almacén
+                    </div>
+                  </div>
 
-                {/* Paso 5: Crear Producto */}
-                <div className={`p-2 rounded-xl border text-center transition-all relative ${
-                  simState.activeStep >= 5 
-                    ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400" 
-                    : simState.activeStep === 4 
-                      ? "bg-purple-950/40 border-purple-500 text-white shadow-lg shadow-purple-500/10 font-bold" 
+                  {/* Paso 3: Crear Almacén */}
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    simState.activeStep >= 3 
+                      ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400" 
+                      : simState.activeStep === 2 
+                        ? "bg-purple-950/40 border-purple-500 text-white shadow-lg shadow-purple-500/10 font-bold" 
+                        : "bg-slate-900/20 border-slate-900 text-slate-600"
+                  }`} id="step_indicator_3">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 3</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {simState.activeStep >= 3 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
+                      Crear Almacén
+                    </div>
+                  </div>
+
+                  {/* Paso 4: Crear Ubicación */}
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    simState.activeStep >= 4 
+                      ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400" 
+                      : simState.activeStep === 3 
+                        ? "bg-purple-950/40 border-purple-500 text-white shadow-lg shadow-purple-500/10 font-bold" 
+                        : "bg-slate-900/20 border-slate-900 text-slate-600"
+                  }`} id="step_indicator_4">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 4</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {simState.activeStep >= 4 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
+                      Crear Ubicación
+                    </div>
+                  </div>
+
+                  {/* Paso 5: Crear Producto */}
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    simState.activeStep >= 5 
+                      ? "bg-slate-900/50 border-emerald-500/40 text-emerald-400" 
+                      : simState.activeStep === 4 
+                        ? "bg-purple-950/40 border-purple-500 text-white shadow-lg shadow-purple-500/10 font-bold" 
+                        : "bg-slate-900/20 border-slate-900 text-slate-600"
+                  }`} id="step_indicator_5">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 5</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {simState.activeStep >= 5 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
+                      Crear Producto
+                    </div>
+                  </div>
+
+                  {/* Practica Completa */}
+                  <div className={`p-2 rounded-xl border text-center transition-all relative ${
+                    simState.activeStep >= 5 
+                      ? "bg-gradient-to-r from-emerald-500/20 to-sky-500/20 border-emerald-400 text-emerald-300 font-bold" 
                       : "bg-slate-900/20 border-slate-900 text-slate-600"
-                }`} id="step_indicator_5">
-                  <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Paso 5</div>
-                  <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
-                    {simState.activeStep >= 5 ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : null}
-                    Crear Producto
+                  }`} id="step_indicator_6">
+                    <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Prueba Final</div>
+                    <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
+                      {simState.activeStep >= 5 ? <Award className="w-3.5 h-3.5 text-emerald-400 animate-bounce" /> : null}
+                      ¡Listo!
+                    </div>
                   </div>
                 </div>
-
-                {/* Practica Completa */}
-                <div className={`p-2 rounded-xl border text-center transition-all relative ${
-                  simState.activeStep >= 5 
-                    ? "bg-gradient-to-r from-emerald-500/20 to-sky-500/20 border-emerald-400 text-emerald-300 font-bold" 
-                    : "bg-slate-900/20 border-slate-900 text-slate-600"
-                }`} id="step_indicator_6">
-                  <div className="text-[9px] uppercase font-bold tracking-wider mb-0.5">Prueba Final</div>
-                  <div className="text-[11px] leading-tight flex items-center justify-center gap-1">
-                    {simState.activeStep >= 5 ? <Award className="w-3.5 h-3.5 text-emerald-400 animate-bounce" /> : null}
-                    ¡Listo!
-                  </div>
-                </div>
-
-              </div>
+              )}
 
               {/* INTERACTIVE HINTS PANEL (Contextual based on step) */}
               <div className="bg-slate-900 border border-purple-500/30 rounded-2xl p-4 shadow-xl text-left" id="step_hints_panel">
@@ -1704,8 +2015,14 @@ export default function App() {
                     </div>
                     <div>
                       <h4 className="text-white text-[11px] font-bold uppercase tracking-wider">Asistente de Logística Odoo</h4>
-                      <p className="text-[10px] text-purple-300 font-medium">
-                        {simState.activeStep < 5 ? `Guía oficial del tutor para el Paso ${simState.activeStep + 1}` : "¡Felicitaciones!"}
+                      <p className="text-[10px] text-purple-300 font-medium font-sans">
+                        {currentClass === 3 ? (
+                          sim3State.step < 5 ? `Guía oficial del tutor para el Paso ${sim3State.step}` : "¡Felicitaciones!"
+                        ) : currentClass === 2 ? (
+                          sim2State.step < 5 ? `Guía oficial del tutor para el Paso ${sim2State.step}` : "¡Felicitaciones!"
+                        ) : (
+                          simState.activeStep < 5 ? `Guía oficial del tutor para el Paso ${simState.activeStep + 1}` : "¡Felicitaciones!"
+                        )}
                       </p>
                     </div>
                   </div>
@@ -1726,10 +2043,22 @@ export default function App() {
                 <div className="space-y-1">
                   <div className="text-slate-200 font-semibold text-xs flex items-center gap-1.5">
                     <Compass className="w-3.5 h-3.5 text-purple-500" />
-                    {simulatorHints[Math.min(simState.activeStep, 5)].title}
+                    {currentClass === 3 ? (
+                      class3Hints[Math.min(sim3State.step - 1, 4)].title
+                    ) : currentClass === 2 ? (
+                      class2Hints[Math.min(sim2State.step - 1, 4)].title
+                    ) : (
+                      simulatorHints[Math.min(simState.activeStep, 5)].title
+                    )}
                   </div>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    {simulatorHints[Math.min(simState.activeStep, 5)].shortHint}
+                  <p className="text-xs text-slate-400 leading-relaxed font-sans">
+                    {currentClass === 3 ? (
+                      class3Hints[Math.min(sim3State.step - 1, 4)].shortHint
+                    ) : currentClass === 2 ? (
+                      class2Hints[Math.min(sim2State.step - 1, 4)].shortHint
+                    ) : (
+                      simulatorHints[Math.min(simState.activeStep, 5)].shortHint
+                    )}
                   </p>
                 </div>
 
@@ -1738,7 +2067,13 @@ export default function App() {
                     <div className="font-bold text-white mb-1 uppercase tracking-wider text-[9px] flex items-center gap-1">
                       <Award className="w-3 h-3 text-[#714B67]" /> Valores Esperados del Ejercicio:
                     </div>
-                    {simulatorHints[Math.min(simState.activeStep, 5)].detailedHint}
+                    {currentClass === 3 ? (
+                      class3Hints[Math.min(sim3State.step - 1, 4)].detailedHint
+                    ) : currentClass === 2 ? (
+                      class2Hints[Math.min(sim2State.step - 1, 4)].detailedHint
+                    ) : (
+                      simulatorHints[Math.min(simState.activeStep, 5)].detailedHint
+                    )}
                   </div>
                 )}
               </div>
@@ -1811,10 +2146,82 @@ export default function App() {
                           </>
                         )}
 
-                        {simMenuSection === "productos_list" && (
+                        {simMenuSection === "compras" && (
+                          <>
+                            <span>/</span>
+                            <span className="font-semibold text-white">Compras</span>
+                          </>
+                        )}
+
+                        {simMenuSection === "compra_form" && (
+                          <>
+                            <span>/</span>
+                            <button onClick={() => setSimMenuSection("compras")} className="hover:underline">Compras</button>
+                            <span>/</span>
+                            <span className="font-semibold text-white">Nueva Solicitud de Cotización</span>
+                          </>
+                        )}
+
+                        {simMenuSection === "proveedores" && (
+                          <>
+                            <span>/</span>
+                            <button onClick={() => setSimMenuSection("compras")} className="hover:underline">Compras</button>
+                            <span>/</span>
+                            <span className="font-semibold text-white font-sans">Proveedores</span>
+                          </>
+                        )}
+
+                        {simMenuSection === "proveedor_form" && (
+                          <>
+                            <span>/</span>
+                            <button onClick={() => setSimMenuSection("proveedores")} className="hover:underline font-sans">Proveedores</button>
+                            <span>/</span>
+                            <span className="font-semibold text-white">Nuevo Proveedor</span>
+                          </>
+                        )}
+
+                        {simMenuSection === "recepciones" && (
                           <>
                             <span>/</span>
                             <button onClick={() => setSimMenuSection("inventario")} className="hover:underline">Inventario</button>
+                            <span>/</span>
+                            <span className="font-semibold text-white">Recepción</span>
+                          </>
+                        )}
+
+                        {simMenuSection === "inventario_ajuste" && (
+                          <>
+                            <span>/</span>
+                            <button onClick={() => setSimMenuSection("inventario")} className="hover:underline">Inventario</button>
+                            <span>/</span>
+                            <span className="font-semibold text-white">Ajuste de Inventario</span>
+                          </>
+                        )}
+
+                        {simMenuSection === "inventario_mermas" && (
+                          <>
+                            <span>/</span>
+                            <button onClick={() => setSimMenuSection("inventario")} className="hover:underline">Inventario</button>
+                            <span>/</span>
+                            <span className="font-semibold text-white">Desechos / Mermas</span>
+                          </>
+                        )}
+
+                        {simMenuSection === "inventario_reporte" && (
+                          <>
+                            <span>/</span>
+                            <button onClick={() => setSimMenuSection("inventario")} className="hover:underline">Inventario</button>
+                            <span>/</span>
+                            <span className="font-semibold text-white">Reporte de Existencias</span>
+                          </>
+                        )}
+
+                        {simMenuSection === "productos_list" && (
+                          <>
+                            <span>/</span>
+                            <button onClick={() => setSimMenuSection(currentClass === 3 ? "compras" : "inventario")} className="hover:underline">
+                              {currentClass === 3 ? "Compras" : "Inventario"}
+                            </button>
                             <span>/</span>
                             <span className="font-semibold text-white">Productos</span>
                           </>
@@ -1823,11 +2230,13 @@ export default function App() {
                         {simMenuSection === "producto_form" && (
                           <>
                             <span>/</span>
-                            <button onClick={() => setSimMenuSection("inventario")} className="hover:underline">Inventario</button>
+                            <button onClick={() => setSimMenuSection(currentClass === 3 ? "compras" : "inventario")} className="hover:underline">
+                              {currentClass === 3 ? "Compras" : "Inventario"}
+                            </button>
                             <span>/</span>
                             <button onClick={() => setSimMenuSection("productos_list")} className="hover:underline">Productos</button>
                             <span>/</span>
-                            <span className="font-semibold text-white">Nuevo Escritorio</span>
+                            <span className="font-semibold text-white">Escritorio de Madera Premium</span>
                           </>
                         )}
                       </div>
@@ -1846,85 +2255,162 @@ export default function App() {
 
                 {/* Sub Menu Navbar for Operational Apps (only shown if logged in and in apps) */}
                 {simState.hasLoggedIn && simMenuSection !== "dashboard" && simMenuSection !== "ajustes" && (
-                  <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between text-xs text-slate-700" id="odoo_sub_nav shadow-xs">
-                    <div className="flex space-x-4 items-center">
-                      <span className="font-bold text-slate-950 text-sm">Inventario</span>
-                      <button 
-                        onClick={() => setSimMenuSection("inventario")}
-                        className={`hover:bg-slate-100 px-2 py-1 rounded font-medium ${simMenuSection === "inventario" ? "text-[#714B67] bg-purple-50" : ""}`}
-                        id="nav_btn_operations"
-                      >
-                        Operaciones
-                      </button>
-                      <button 
-                        onClick={() => setSimMenuSection("productos_list")}
-                        className={`hover:bg-slate-100 px-2 py-1 rounded font-medium ${simMenuSection === "productos_list" || simMenuSection === "producto_form" ? "text-[#714B67] bg-purple-50" : ""}`}
-                        id="nav_btn_products"
-                      >
-                        Productos
-                      </button>
-                      
-                      {/* Only configurable if step 2 locations are enabled */}
-                      <div 
-                        className="relative"
-                        onMouseLeave={() => setShowOdooConfigDropdown(false)}
-                      >
+                  <div className="bg-white border-b border-slate-200 px-4 py-2 flex items-center justify-between text-xs text-slate-700" id="odoo_sub_nav_shadow-xs">
+                    {currentClass === 3 ? (
+                      <div className="flex space-x-4 items-center">
+                        <span className="font-bold text-[#714B67] text-sm">Compras</span>
                         <button 
-                          onClick={() => setShowOdooConfigDropdown(!showOdooConfigDropdown)}
-                          className={`hover:bg-slate-100 px-2 py-1 rounded font-medium inline-flex items-center space-x-1 cursor-pointer transition-colors ${showOdooConfigDropdown ? "bg-slate-100 text-[#714B67]" : "text-slate-700"}`}
-                          id="nav_btn_config_dropdown"
+                          onClick={() => setSimMenuSection("compras")}
+                          className={`hover:bg-slate-100 px-2 py-1 rounded font-semibold ${simMenuSection === "compras" || simMenuSection === "compra_form" ? "text-[#714B67] bg-purple-50" : "text-slate-600"}`}
+                          id="nav_btn_compras"
                         >
-                          <span>Configuración</span>
-                          <span className={`text-[8px] transition-transform duration-200 ${showOdooConfigDropdown ? "rotate-180 text-purple-600" : "text-slate-400"}`}>▼</span>
+                          Peticiones de Presupuesto
+                        </button>
+                        <button 
+                          onClick={() => setSimMenuSection("proveedores")}
+                          className={`hover:bg-slate-100 px-2 py-1 rounded font-semibold ${simMenuSection === "proveedores" || simMenuSection === "proveedor_form" ? "text-[#714B67] bg-purple-50" : "text-slate-600"}`}
+                          id="nav_btn_proveedores"
+                        >
+                          Proveedores
+                        </button>
+                        <button 
+                          onClick={() => setSimMenuSection("productos_list")}
+                          className={`hover:bg-slate-100 px-2 py-1 rounded font-semibold ${simMenuSection === "productos_list" || simMenuSection === "producto_form" ? "text-[#714B67] bg-purple-50" : "text-slate-600"}`}
+                          id="nav_btn_compras_products"
+                        >
+                          Productos
+                        </button>
+                        <button 
+                          onClick={() => setSimMenuSection("inventario")}
+                          className={`hover:bg-slate-100 px-2 py-1 rounded font-semibold ${simMenuSection === "inventario" || simMenuSection === "recepciones" ? "text-[#714B67] bg-purple-50" : "text-slate-600"}`}
+                          id="nav_btn_compras_inventory"
+                        >
+                          Inventario (Módulo de Recepción)
+                        </button>
+                      </div>
+                    ) : currentClass === 2 ? (
+                      <div className="flex space-x-4 items-center">
+                        <span className="font-bold text-slate-950 text-sm">Inventario</span>
+                        <button 
+                          onClick={() => setSimMenuSection("inventario")}
+                          className={`hover:bg-slate-100 px-2 py-1 rounded font-semibold ${simMenuSection === "inventario" ? "text-[#714B67] bg-purple-50" : "text-slate-600"}`}
+                          id="nav_btn_operations2"
+                        >
+                          Resumen de Operaciones
+                        </button>
+                        <button 
+                          onClick={() => setSimMenuSection("inventario_ajuste")}
+                          className={`hover:bg-slate-100 px-2 py-1 rounded font-semibold ${simMenuSection === "inventario_ajuste" ? "text-[#714B67] bg-purple-50" : "text-slate-600"}`}
+                          id="nav_btn_adjustments2"
+                        >
+                          Ajustes Físicos
+                        </button>
+                        <button 
+                          onClick={() => setSimMenuSection("inventario_mermas")}
+                          className={`hover:bg-slate-100 px-2 py-1 rounded font-semibold ${simMenuSection === "inventario_mermas" ? "text-[#714B67] bg-purple-50" : "text-slate-600"}`}
+                          id="nav_btn_scrap2"
+                        >
+                          Desechar Mermas
+                        </button>
+                        <button 
+                          onClick={() => setSimMenuSection("productos_list")}
+                          className={`hover:bg-slate-100 px-2 py-1 rounded font-semibold ${simMenuSection === "productos_list" || simMenuSection === "producto_form" ? "text-[#714B67] bg-purple-50" : "text-slate-600"}`}
+                          id="nav_btn_products2"
+                        >
+                          Productos
+                        </button>
+                        <button 
+                          onClick={() => setSimMenuSection("inventario_reporte")}
+                          className={`hover:bg-slate-100 px-2 py-1 rounded font-semibold ${simMenuSection === "inventario_reporte" ? "text-[#714B67] bg-purple-50" : "text-slate-600"}`}
+                          id="nav_btn_report2"
+                        >
+                          Reportes
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex space-x-4 items-center">
+                        <span className="font-bold text-slate-950 text-sm">Inventario</span>
+                        <button 
+                          onClick={() => setSimMenuSection("inventario")}
+                          className={`hover:bg-slate-100 px-2 py-1 rounded font-medium ${simMenuSection === "inventario" ? "text-[#714B67] bg-purple-50" : ""}`}
+                          id="nav_btn_operations"
+                        >
+                          Operaciones
+                        </button>
+                        <button 
+                          onClick={() => setSimMenuSection("productos_list")}
+                          className={`hover:bg-slate-100 px-2 py-1 rounded font-medium ${simMenuSection === "productos_list" || simMenuSection === "producto_form" ? "text-[#714B67] bg-purple-50" : ""}`}
+                          id="nav_btn_products"
+                        >
+                          Productos
                         </button>
                         
-                        {showOdooConfigDropdown && (
-                          <div 
-                            className="absolute left-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-xl z-50 py-1 font-sans animate-in fade-in duration-100"
-                            id="config_dropdown_content"
+                        {/* Only configurable if step 2 locations are enabled */}
+                        <div 
+                          className="relative"
+                          onMouseLeave={() => setShowOdooConfigDropdown(false)}
+                        >
+                          <button 
+                            onClick={() => setShowOdooConfigDropdown(!showOdooConfigDropdown)}
+                            className={`hover:bg-slate-100 px-2 py-1 rounded font-medium inline-flex items-center space-x-1 cursor-pointer transition-colors ${showOdooConfigDropdown ? "bg-slate-100 text-[#714B67]" : "text-slate-700"}`}
+                            id="nav_btn_config_dropdown"
                           >
-                            <button
-                              onClick={() => {
-                                setShowOdooConfigDropdown(false);
-                                if (simState.settingsActivatedLocations) {
-                                  setSimMenuSection("ubicaciones");
-                                } else {
-                                  triggerAlert(
-                                    "Ajustes Requeridos",
-                                    "Debes activar 'Ubicaciones de Almacenamiento' en los Ajustes primero (Paso 2) para poder acceder al módulo de Ubicaciones."
-                                  );
-                                }
-                              }}
-                              className="w-full text-left px-3.5 py-2 text-xs hover:bg-slate-50 font-normal block text-slate-700 cursor-pointer hover:text-purple-700 hover:pl-4 transition-all"
-                              id="btn_dropdown_ubicaciones"
+                            <span>Configuración</span>
+                            <span className={`text-[8px] transition-transform duration-200 ${showOdooConfigDropdown ? "rotate-180 text-purple-600" : "text-slate-400"}`}>▼</span>
+                          </button>
+                          
+                          {showOdooConfigDropdown && (
+                            <div 
+                              className="absolute left-0 mt-1 w-48 bg-white border border-slate-200 rounded-lg shadow-xl z-50 py-1 font-sans animate-in fade-in duration-100"
+                              id="config_dropdown_content"
                             >
-                              Ubicaciones
-                            </button>
-                            <span className="block border-t border-slate-100 my-1"></span>
-                            <button
-                              onClick={() => {
-                                setShowOdooConfigDropdown(false);
-                                if (simState.settingsActivatedLocations) {
-                                  setSimMenuSection("almacenes");
-                                } else {
-                                  triggerAlert(
-                                    "Ajustes Requeridos",
-                                    "Debes activar 'Ubicaciones de Almacenamiento' en los Ajustes primero (Paso 2) para poder acceder al módulo de Almacenes."
-                                  );
-                                }
-                              }}
-                              className="w-full text-left px-3.5 py-2 text-xs hover:bg-slate-50 font-normal block text-slate-700 cursor-pointer hover:text-purple-700 hover:pl-4 transition-all"
-                              id="btn_dropdown_almacenes"
-                            >
-                              Almacenes
-                            </button>
-                          </div>
-                        )}
+                              <button
+                                onClick={() => {
+                                  setShowOdooConfigDropdown(false);
+                                  if (simState.settingsActivatedLocations) {
+                                    setSimMenuSection("ubicaciones");
+                                  } else {
+                                    triggerAlert(
+                                      "Ajustes Requeridos",
+                                      "Debes activar 'Ubicaciones de Almacenamiento' en los Ajustes primero (Paso 2) para poder acceder al módulo de Ubicaciones."
+                                    );
+                                  }
+                                }}
+                                className="w-full text-left px-3.5 py-2 text-xs hover:bg-slate-50 font-normal block text-slate-700 cursor-pointer hover:text-purple-700 hover:pl-4 transition-all"
+                                id="btn_dropdown_ubicaciones"
+                              >
+                                Ubicaciones
+                              </button>
+                              <span className="block border-t border-slate-100 my-1"></span>
+                              <button
+                                onClick={() => {
+                                  setShowOdooConfigDropdown(false);
+                                  if (simState.settingsActivatedLocations) {
+                                    setSimMenuSection("almacenes");
+                                  } else {
+                                    triggerAlert(
+                                      "Ajustes Requeridos",
+                                      "Debes activar 'Ubicaciones de Almacenamiento' en los Ajustes primero (Paso 2) para poder acceder al módulo de Almacenes."
+                                    );
+                                  }
+                                }}
+                                className="w-full text-left px-3.5 py-2 text-xs hover:bg-slate-50 font-normal block text-slate-700 cursor-pointer hover:text-purple-700 hover:pl-4 transition-all"
+                                id="btn_dropdown_almacenes"
+                              >
+                                Almacenes
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
+                    )}
 
-                    <div className="text-slate-400 text-xs text-right">
-                      *Módulo de Inventario (WMS)*
+                    <div className="text-slate-400 text-xs text-right font-mono">
+                      {currentClass === 3 
+                        ? "*Módulo de Compras Integrado*" 
+                        : currentClass === 2 
+                          ? "*Auditoría y Mermas (Gestión de Existencias)*" 
+                          : "*Módulo de Inventario (WMS)*"}
                     </div>
                   </div>
                 )}
@@ -1988,10 +2474,14 @@ export default function App() {
                       <div className="mt-5 border-t border-slate-100 pt-4 text-center">
                         <span className="text-[11px] text-slate-500 block">¿No recuerdas las credenciales? Infórmalo al tutor o:</span>
                         <button 
-                          onClick={handleAutoFillLogin}
-                          className="text-xs text-purple-700 font-semibold underline mt-1.5 hover:text-purple-950 inline-block focus:outline-none"
+                          type="button"
+                          onClick={() => {
+                            setLoginEmail("admin@odoo-edu.com");
+                            setLoginPass("odoo2026");
+                          }}
+                          className="mt-2 text-xs font-bold text-purple-700 hover:text-purple-900 underline cursor-pointer"
                         >
-                          Autocompletar Datos de prueba
+                          Auto-llenar credenciales
                         </button>
                       </div>
                     </div>
@@ -2002,62 +2492,168 @@ export default function App() {
                     <div className="w-full max-w-2xl text-left bg-slate-50" id="odoo_dashboard_apps">
                       <div className="mb-6 flex justify-between items-center bg-white p-3 rounded-xl border border-slate-200">
                         <div>
-                          <h4 className="text-sm font-bold text-slate-900">Bienvenido, Administrador</h4>
-                          <p className="text-[11px] text-slate-500">Selecciona una aplicación para iniciar</p>
+                          <h4 className="text-sm font-bold text-slate-900 font-sans">Bienvenido, Administrador</h4>
+                          <p className="text-[11px] text-slate-500">Selecciona una aplicación para iniciar la sesión práctica</p>
                         </div>
                         <div className="text-xs font-semibold text-purple-700 bg-purple-50 px-2.5 py-1 rounded-lg">
-                          Estado: {simStepsCompleted >= 5 ? "Práctica Completa 🎉" : `Paso ${simStepsCompleted + 1} de 4 en Curso`}
+                          Estado: {currentClass === 3 ? (
+                            sim3State.step >= 5 ? "Práctica Completa 🎉" : `Paso ${sim3State.step} de 4 en Curso`
+                          ) : currentClass === 2 ? (
+                            sim2State.step >= 5 ? "Práctica Completa 🎉" : `Paso ${sim2State.step} de 4 en Curso`
+                          ) : (
+                            simState.activeStep >= 5 ? "Práctica Completa 🎉" : `Paso ${simState.activeStep + 1} de 5 en Curso`
+                          )}
                         </div>
                       </div>
 
                       {/* Bento Grid Apps Odoo */}
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4" id="odoo_apps_bento">
-                        
-                        {/* App 1: Inventario */}
-                        <button
-                          onClick={() => setSimMenuSection("inventario")}
-                          className="bg-white hover:bg-[#714B67]/5 hover:border-[#714B67]/40 border border-slate-200 p-4 rounded-xl shadow-xs text-center flex flex-col items-center justify-center gap-2 group transition-all"
-                          id="app_btn_inventario"
-                        >
-                          <div className="bg-[#56cd7f] text-white p-3 rounded-2xl group-hover:scale-105 transition-all shadow-sm">
-                            <Layers className="w-6 h-6" />
-                          </div>
-                          <span className="text-xs font-semibold text-slate-800">Inventario</span>
-                          <span className="text-[9px] text-slate-400">Ver tarjetas de operaciones</span>
-                        </button>
+                        {currentClass === 3 ? (
+                          <>
+                            {/* App Compras (Class 3) */}
+                            <button
+                              onClick={() => setSimMenuSection("compras")}
+                              className="bg-white hover:bg-[#714B67]/5 hover:border-[#714B67]/40 border border-slate-200 p-4 rounded-xl shadow-xs text-center flex flex-col items-center justify-center gap-2 group transition-all cursor-pointer"
+                              id="app_btn_compras3"
+                            >
+                              <div className="bg-[#714B67] text-white p-3 rounded-2xl group-hover:scale-105 transition-all shadow-sm">
+                                <ShoppingCart className="w-6 h-6" />
+                              </div>
+                              <span className="text-xs font-semibold text-[#714B67] font-sans">Compras</span>
+                              <span className="text-[9px] text-slate-400">Crear proveedores y peticiones</span>
+                            </button>
 
-                        {/* App 2: Ajustes */}
-                        <button
-                          onClick={() => setSimMenuSection("ajustes")}
-                          className="bg-white hover:bg-[#714B67]/5 hover:border-[#714B67]/40 border border-slate-200 p-4 rounded-xl shadow-xs text-center flex flex-col items-center justify-center gap-2 group transition-all"
-                          id="app_btn_settings"
-                        >
-                          <div className="bg-[#6c757d] text-white p-3 rounded-2xl group-hover:scale-105 transition-all shadow-sm">
-                            <Settings className="w-6 h-6" />
-                          </div>
-                          <span className="text-xs font-semibold text-slate-800">Ajustes</span>
-                          <span className="text-[9px] text-slate-400">Activar ubicaciones</span>
-                        </button>
+                            {/* App Inventario (Class 3) */}
+                            <button
+                              onClick={() => {
+                                if (sim3State.step < 3) {
+                                  triggerAlert("Falta Confirmar Orden de Compra", "Primero debes crear la Solicitud de Cotización (SdC) y hacer clic en 'Confirmar Orden' (Paso 2) desde el módulo de Compras.");
+                                } else {
+                                  setSimMenuSection("inventario");
+                                }
+                              }}
+                              className={`bg-white border p-4 rounded-xl text-center flex flex-col items-center justify-center gap-2 group transition-all cursor-pointer ${
+                                sim3State.step < 3 
+                                  ? "opacity-50 hover:bg-slate-50 border-slate-200" 
+                                  : "hover:bg-[#714B67]/5 hover:border-[#714B67]/40 border-slate-200"
+                              }`}
+                              id="app_btn_inventario3"
+                            >
+                              <div className="bg-[#56cd7f] text-white p-3 rounded-2xl group-hover:scale-105 transition-all shadow-sm">
+                                <Layers className="w-6 h-6" />
+                              </div>
+                              <span className="text-xs font-semibold text-slate-800 font-sans">Inventario</span>
+                              <span className="text-[9px] text-slate-400">Validar recepciones y stock</span>
+                            </button>
 
-                        {/* App 3: Ventas (Locked for simplicity) */}
-                        <div
-                          className="bg-white/60 border border-slate-200/50 p-4 rounded-xl text-center flex flex-col items-center justify-center gap-2 relative opacity-55 cursor-not-allowed"
-                          id="app_btn_ventas"
-                        >
-                          <div className="bg-[#1f8fc1] text-white p-3 rounded-2xl">
-                            <Package className="w-6 h-6" />
-                          </div>
-                          <span className="text-xs font-semibold text-slate-800">Ventas</span>
-                          <span className="text-[9px] text-slate-400">Módulo Bloqueado</span>
-                        </div>
+                            {/* App Proveedores (Class 3) */}
+                            <button
+                              onClick={() => setSimMenuSection("proveedores")}
+                              className="bg-white hover:bg-[#714B67]/5 hover:border-[#714B67]/40 border border-slate-200 p-4 rounded-xl shadow-xs text-center flex flex-col items-center justify-center gap-2 group transition-all cursor-pointer"
+                              id="app_btn_proveedores3"
+                            >
+                              <div className="bg-[#24a1a1] text-white p-3 rounded-2xl group-hover:scale-105 transition-all shadow-sm">
+                                <Users className="w-6 h-6" />
+                              </div>
+                              <span className="text-xs font-semibold text-slate-800 font-sans">Proveedores</span>
+                              <span className="text-[9px] text-slate-400">Administrar directorio comercial</span>
+                            </button>
+                          </>
+                        ) : currentClass === 2 ? (
+                          <>
+                            {/* App Inventario (Class 2) */}
+                            <button
+                              onClick={() => setSimMenuSection("inventario")}
+                              className="bg-white hover:bg-[#714B67]/5 hover:border-[#714B67]/40 border border-slate-200 p-4 rounded-xl shadow-xs text-center flex flex-col items-center justify-center gap-2 group transition-all cursor-pointer"
+                              id="app_btn_inventario2"
+                            >
+                              <div className="bg-[#56cd7f] text-white p-3 rounded-2xl group-hover:scale-105 transition-all shadow-sm">
+                                <Layers className="w-6 h-6" />
+                              </div>
+                              <span className="text-xs font-semibold text-slate-800 font-sans">Inventario</span>
+                              <span className="text-[9px] text-slate-400">Resumen de operaciones</span>
+                            </button>
 
+                            {/* App Ajustes Físicos (Class 2) */}
+                            <button
+                              onClick={() => setSimMenuSection("inventario_ajuste")}
+                              className="bg-white hover:bg-[#714B67]/5 hover:border-[#714B67]/40 border border-slate-200 p-4 rounded-xl shadow-xs text-center flex flex-col items-center justify-center gap-2 group transition-all cursor-pointer"
+                              id="app_btn_ajustes2"
+                            >
+                              <div className="bg-[#7c569c] text-white p-3 rounded-2xl group-hover:scale-105 transition-all shadow-sm">
+                                <Settings className="w-6 h-6" />
+                              </div>
+                              <span className="text-xs font-semibold text-slate-800 font-sans">Ajuste de Stock...</span>
+                              <span className="text-[9px] text-slate-400">Registrar conteo físico</span>
+                            </button>
+
+                            {/* App Desechos / Mermas (Class 2) */}
+                            <button
+                              onClick={() => setSimMenuSection("inventario_mermas")}
+                              className="bg-white hover:bg-[#714B67]/5 hover:border-[#714B67]/40 border border-slate-200 p-4 rounded-xl shadow-xs text-center flex flex-col items-center justify-center gap-2 group transition-all cursor-pointer"
+                              id="app_btn_mermas2"
+                            >
+                              <div className="bg-[#e05252] text-white p-3 rounded-2xl group-hover:scale-105 transition-all shadow-sm">
+                                <Trash2 className="w-6 h-6" />
+                              </div>
+                              <span className="text-xs font-semibold text-slate-800 font-sans">Desechos / Merma</span>
+                              <span className="text-[9px] text-slate-400">Dar de baja productos rotos</span>
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            {/* App 1: Inventario (Class 1) */}
+                            <button
+                              onClick={() => setSimMenuSection("inventario")}
+                              className="bg-white hover:bg-[#714B67]/5 hover:border-[#714B67]/40 border border-slate-200 p-4 rounded-xl shadow-xs text-center flex flex-col items-center justify-center gap-2 group transition-all cursor-pointer"
+                              id="app_btn_inventario"
+                            >
+                              <div className="bg-[#56cd7f] text-white p-3 rounded-2xl group-hover:scale-105 transition-all shadow-sm">
+                                <Layers className="w-6 h-6" />
+                              </div>
+                              <span className="text-xs font-semibold text-slate-800 font-sans">Inventario</span>
+                              <span className="text-[9px] text-slate-400">Ver tarjetas de operaciones</span>
+                            </button>
+
+                            {/* App 2: Ajustes (Class 1) */}
+                            <button
+                              onClick={() => setSimMenuSection("ajustes")}
+                              className="bg-white hover:bg-[#714B67]/5 hover:border-[#714B67]/40 border border-slate-200 p-4 rounded-xl shadow-xs text-center flex flex-col items-center justify-center gap-2 group transition-all cursor-pointer"
+                              id="app_btn_settings"
+                            >
+                              <div className="bg-[#6c757d] text-white p-3 rounded-2xl group-hover:scale-105 transition-all shadow-sm">
+                                <Settings className="w-6 h-6" />
+                              </div>
+                              <span className="text-xs font-semibold text-slate-800 font-sans">Ajustes</span>
+                              <span className="text-[9px] text-slate-400">Activar ubicaciones</span>
+                            </button>
+
+                            {/* App 3: Ventas (Locked for simplicity) */}
+                            <div
+                              className="bg-white/60 border border-slate-200/50 p-4 rounded-xl text-center flex flex-col items-center justify-center gap-2 relative opacity-55 cursor-not-allowed"
+                              id="app_btn_ventas"
+                            >
+                              <div className="bg-[#1f8fc1] text-white p-3 rounded-2xl">
+                                <Package className="w-6 h-6" />
+                              </div>
+                              <span className="text-xs font-semibold text-slate-800 font-sans">Ventas</span>
+                              <span className="text-[9px] text-slate-400">Módulo Bloqueado</span>
+                            </div>
+                          </>
+                        )}
                       </div>
 
                       {/* Instructor tips box inside simulator workspace */}
                       <div className="mt-8 bg-purple-50 hover:bg-purple-100/80 border border-purple-200/50 p-4 rounded-xl flex items-start gap-3 transition-colors" id="instructor_comment_simulator">
                         <Sparkles className="w-5 h-5 text-purple-700 shrink-0 mt-0.5" />
-                        <div className="text-xs text-purple-950 leading-relaxed">
-                          <strong>Guía de Logística:</strong> Para completar el paso 2, pulsa en la aplicación de <strong>Ajustes</strong>, busca la casilla llamada <strong>"Ubicaciones de Almacenamiento"</strong> bajo la sección Almacén, márcala y haz clic en <strong>Guardar</strong>.
+                        <div className="text-xs text-purple-950 leading-relaxed font-sans">
+                          {currentClass === 3 ? (
+                            <span><strong>Guía de Abastecimiento:</strong> Para empezar el Paso 1, haz clic en la aplicación de <strong>Proveedores</strong> (o ve a Compras &rarr; Proveedores), pulsa en <strong>"Nuevo"</strong> y de alta al proveedor <strong>Distribuidora Continental S.A.S.</strong> para poder negociar los acuerdos.</span>
+                          ) : currentClass === 2 ? (
+                            <span><strong>Guía de Existencias:</strong> Para iniciar el control físico, pulsa la aplicación de <strong>Ajuste de Stock</strong> e introduce la cantidad física que has contado físicamente en las estanterías (Paso 2).</span>
+                          ) : (
+                            <span><strong>Guía de Logística:</strong> Para completar el paso 2, pulsa en la aplicación de <strong>Ajustes</strong>, busca la casilla llamada <strong>"Ubicaciones de Almacenamiento"</strong> bajo la sección Almacén, márcala y haz clic en <strong>Guardar</strong>.</span>
+                          )}
                         </div>
                       </div>
 
@@ -2769,6 +3365,764 @@ export default function App() {
                         </div>
 
                       </form>
+                    </div>
+                  )}
+
+                  {/* CLASS 3: PROVEEDORES LIST VIEW */}
+                  {simState.hasLoggedIn && simMenuSection === "proveedores" && (
+                    <div className="w-full bg-white rounded-xl border border-slate-200 shadow-md p-4 text-left text-xs" id="odoo_proveedores_list">
+                      <div className="border-b border-slate-200 pb-2 mb-3 flex justify-between items-center bg-slate-50 p-2 rounded">
+                        <span className="font-bold text-[#714B67] text-sm">Directorio de Proveedores Comerciales</span>
+                        <button 
+                          onClick={() => setSimMenuSection("proveedor_form")}
+                          className="bg-[#714B67] hover:bg-[#5f3e56] text-white px-3 py-1.5 rounded font-bold text-xs cursor-pointer flex items-center gap-1 shadow-sm"
+                          id="btn_new_provider"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Nuevo Proveedor
+                        </button>
+                      </div>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs text-slate-700">
+                          <thead className="bg-[#714B67]/5 text-[#714B67] font-semibold">
+                            <tr>
+                              <th className="p-2.5">Nombre de Contacto</th>
+                              <th className="p-2.5">Ciudad</th>
+                              <th className="p-2.5">Correo Electrónico</th>
+                              <th className="p-2.5">Estado comercial</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {sim3State.providerName ? (
+                              <tr className="hover:bg-slate-50 transition-colors">
+                                <td className="p-2.5 font-bold text-slate-900 flex items-center gap-2">
+                                  <span className="w-2 h-2 bg-emerald-500 rounded-full inline-block"></span>
+                                  {sim3State.providerName}
+                                </td>
+                                <td className="p-2.5 text-slate-500">Bogotá D.C., Colombia</td>
+                                <td className="p-2.5 text-slate-500">contacto@continental.co</td>
+                                <td className="p-2.5">
+                                  <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-emerald-100">Activo / Homologado</span>
+                                </td>
+                              </tr>
+                            ) : null}
+                            <tr className="hover:bg-slate-50 text-slate-400">
+                              <td className="p-2.5">Maderas de América S.A. (Demo)</td>
+                              <td className="p-2.5">Medellín</td>
+                              <td className="p-2.5 font-mono">contacto@maderasamerica.com</td>
+                              <td className="p-2.5"><span className="bg-slate-50 text-slate-400 px-2 py-0.5 rounded-full text-[10px]">De Prueba</span></td>
+                            </tr>
+                            <tr className="hover:bg-slate-50 text-slate-400">
+                              <td className="p-2.5">Ferretería Industrial del Centro (Demo)</td>
+                              <td className="p-2.5">Cali</td>
+                              <td className="p-2.5 font-mono">ventas@ferreiracentro.co</td>
+                              <td className="p-2.5"><span className="bg-slate-50 text-slate-400 px-2 py-0.5 rounded-full text-[10px]">De Prueba</span></td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {sim3State.step === 1 && (
+                        <div className="mt-4 bg-purple-50 hover:bg-purple-100/80 border border-purple-200/50 p-3.5 rounded-xl flex items-start gap-2.5 transition-colors">
+                          <Lightbulb className="w-4.5 h-4.5 text-purple-700 shrink-0 mt-0.5" />
+                          <div className="text-xs text-purple-950">
+                            <strong>Indicación Profesional:</strong> Haz clic en <strong>"Nuevo Proveedor"</strong> superior y de alta a <strong>"Distribuidora Continental S.A.S."</strong> para convalidar este paso logístico.
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* CLASS 3: PROVEEDOR FORM VIEW */}
+                  {simState.hasLoggedIn && simMenuSection === "proveedor_form" && (
+                    <div className="w-full bg-white rounded-xl border border-slate-200 shadow-md p-4 text-left text-xs" id="odoo_proveedor_form">
+                      <div className="border-b border-slate-200 pb-2 mb-3 flex justify-between items-center">
+                        <span className="font-bold text-slate-900 text-sm">Nuevo Proveedor / Ficha Comercial</span>
+                        <button 
+                          onClick={() => setSimMenuSection("proveedores")}
+                          className="text-slate-400 hover:text-slate-700"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-4 font-sans">
+                        <div>
+                          <label className="block text-slate-600 font-bold mb-1">Nombre Comercial de la Compañía / Proveedor <strong className="text-red-500">*</strong></label>
+                          <input 
+                            type="text"
+                            value={c3ProviderNameInput}
+                            onChange={(e) => setC3ProviderNameInput(e.target.value)}
+                            className="w-full border border-slate-300 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-600 bg-white text-slate-900 font-sans"
+                            placeholder="ej. Distribuidora Continental S.A.S."
+                            id="field_provider_name"
+                          />
+                          <span className="text-[10px] text-slate-500 block mt-1">El tutor requiere exactamente: <strong>Distribuidora Continental S.A.S.</strong> (debe incluir "Continental" para validar).</span>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-slate-600 font-bold mb-1">Dirección Física</label>
+                            <input 
+                              type="text"
+                              disabled
+                              value="Zona Industrial Calle 4 #18-22"
+                              className="w-full border border-slate-200 rounded px-2 py-1 bg-slate-50 text-slate-500 cursor-not-allowed"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-slate-600 font-bold mb-1">Ciudad</label>
+                            <input 
+                              type="text"
+                              disabled
+                              value="Bogotá D.C."
+                              className="w-full border border-slate-200 rounded px-2 py-1 bg-slate-50 text-slate-500 cursor-not-allowed"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end space-x-2 pt-2.5 border-t border-slate-100">
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setSimMenuSection("proveedores");
+                            }}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded text-xs cursor-pointer font-bold"
+                          >
+                            Descartar
+                          </button>
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              const input = c3ProviderNameInput.trim();
+                              if (!input.toLowerCase().includes("continental")) {
+                                triggerAlert(
+                                  "Validación Fallida",
+                                  "Debes registrar exactamente el proveedor 'Distribuidora Continental S.A.S.' sugerido en el caso de estudio de compras para poder avanzar."
+                                );
+                              } else {
+                                setSim3State({
+                                  ...sim3State,
+                                  providerName: input,
+                                  step: 2
+                                });
+                                triggerAlert(
+                                  "Proveedor Registrado",
+                                  "¡Excelente! Distribuidora Continental S.A.S. ha sido dadas de alta exitosamente en Odoo. Ahora procedamos a crear la Solicitud de Cotización (SdC)."
+                                );
+                                setSimMenuSection("compras");
+                              }
+                            }}
+                            className="bg-[#714B67] hover:bg-[#5f3e56] text-white px-4 py-1.5 rounded font-bold text-xs cursor-pointer"
+                            id="btn_save_provider_submit"
+                          >
+                            Guardar Contacto
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CLASS 3: COMPRAS (SdC) LIST VIEW */}
+                  {simState.hasLoggedIn && simMenuSection === "compras" && (
+                    <div className="w-full bg-white rounded-xl border border-slate-200 shadow-md p-4 text-left text-xs" id="odoo_compras_list">
+                      <div className="border-b border-slate-200 pb-2 mb-3 flex justify-between items-center bg-slate-50 p-2 rounded">
+                        <span className="font-bold text-[#714B67] text-sm">Peticiones de Presupuesto (SdC)</span>
+                        <button 
+                          onClick={() => {
+                            if (!sim3State.providerName) {
+                              triggerAlert("Paso Bloqueado", "Primero debes dar de alta al proveedor 'Distribuidora Continental S.A.S.' en la pestaña de Proveedores (Paso 1).");
+                            } else {
+                              setSimMenuSection("compra_form");
+                            }
+                          }}
+                          className={`px-3 py-1.5 rounded font-bold text-xs cursor-pointer flex items-center gap-1 shadow-sm ${
+                            !sim3State.providerName 
+                              ? "bg-slate-200 text-slate-500 cursor-not-allowed" 
+                              : "bg-[#714B67] hover:bg-[#5f3e56] text-white"
+                          }`}
+                          id="btn_new_purchase_order"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Nuevo Presupuesto
+                        </button>
+                      </div>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs text-slate-700">
+                          <thead className="bg-[#714B67]/5 text-[#714B67] font-semibold">
+                            <tr>
+                              <th className="p-2.5">Referencia</th>
+                              <th className="p-2.5">Proveedor</th>
+                              <th className="p-2.5">Fecha de recepción</th>
+                              <th className="p-2.5">Comprador</th>
+                              <th className="p-2.5 text-right">Total</th>
+                              <th className="p-2.5 text-center">Estado del documento</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {sim3State.step >= 2 && sim3State.providerName ? (
+                              <tr 
+                                onClick={() => setSimMenuSection("compra_form")}
+                                className="hover:bg-slate-50 transition-colors cursor-pointer"
+                              >
+                                <td className="p-2.5 font-mono font-bold text-purple-800">
+                                  {sim3State.hasConfirmedOC ? "OC-0001" : "DP0001"}
+                                </td>
+                                <td className="p-2.5 text-slate-900 font-semibold">{sim3State.providerName}</td>
+                                <td className="p-2.5 text-slate-500">Hoy (Inmediata)</td>
+                                <td className="p-2.5 text-slate-500">Administrator</td>
+                                <td className="p-2.5 text-right font-mono font-bold text-slate-900">${sim3State.purchaseQty * 80}.00</td>
+                                <td className="p-2.5 text-center">
+                                  {sim3State.hasConfirmedOC ? (
+                                    <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-emerald-100">Orden de Compra (OC)</span>
+                                  ) : (
+                                    <span className="bg-sky-50 text-sky-700 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-sky-100">Borrador / SdC</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ) : (
+                              <tr>
+                                <td colSpan={6} className="p-6 text-center text-slate-400 italic">No hay peticiones de presupuesto registradas aún. ¡Crea una nueva!</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {sim3State.step === 2 && (
+                        <div className="mt-4 bg-[#714B67]/5 border border-[#714B67]/20 p-3.5 rounded-xl flex items-start gap-2.5">
+                          <Sparkles className="w-4.5 h-4.5 text-[#714B67] shrink-0 mt-0.5" />
+                          <div className="text-xs text-slate-800">
+                            <strong>Continuar Paso 2:</strong> Pulsa en <strong>"Nuevo Presupuesto"</strong> para redactar la Solicitud de Cotización de <strong>250</strong> escritorios de madera.
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* CLASS 3: COMPRA FORM VIEW */}
+                  {simState.hasLoggedIn && simMenuSection === "compra_form" && (
+                    <div className="w-full bg-white rounded-xl border border-slate-200 shadow-md p-4 text-left text-xs" id="odoo_compra_form">
+                      <div className="border-b border-slate-200 pb-2 mb-3 flex justify-between items-center">
+                        <div className="flex items-center space-x-1.5">
+                          <span className="font-bold text-slate-400">Petición de Presupuesto</span>
+                          <span className="font-mono text-xs text-slate-900 font-bold bg-slate-100 px-2 py-0.5 rounded">
+                            {sim3State.hasConfirmedOC ? "OC-0001" : "DP0001"}
+                          </span>
+                        </div>
+                        <button 
+                          onClick={() => setSimMenuSection("compras")}
+                          className="text-slate-400 hover:text-slate-700 font-bold"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-4 font-sans">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50 p-3 rounded border border-slate-200">
+                          <div>
+                            <span className="block text-slate-500 text-[10px] uppercase font-bold">Proveedor Homologado</span>
+                            <span className="text-xs font-bold text-[#714B67]">{sim3State.providerName || "No seleccionado"}</span>
+                          </div>
+                          <div>
+                            <span className="block text-slate-500 text-[10px] uppercase font-bold">Referencia del documento</span>
+                            <span className="text-xs font-mono font-bold text-slate-800">REF-CON-189</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-2">Líneas de Compra (Lanzamiento de Demanda) <strong className="text-red-500">*</strong></label>
+                          <div className="border border-slate-200 rounded-lg overflow-hidden">
+                            <table className="w-full text-left text-xs text-slate-700">
+                              <thead className="bg-[#714B67]/5 text-slate-800 font-semibold">
+                                <tr>
+                                  <th className="p-2 border-r border-slate-200">Producto</th>
+                                  <th className="p-2 border-r border-slate-200 text-center w-28">Demanda (Cantidad)</th>
+                                  <th className="p-2 border-r border-slate-200 text-right w-28">Costo ($)</th>
+                                  <th className="p-2 text-right w-28">Subtotal</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  <td className="p-2.5 border-r border-slate-200 font-semibold text-slate-900">
+                                    Escritorio de Madera Premium (SKU: MUE-ESC-001)
+                                  </td>
+                                  <td className="p-2 border-r border-slate-200">
+                                    <input 
+                                      type="number"
+                                      disabled={sim3State.hasConfirmedOC}
+                                      value={c3PurchaseQtyInput}
+                                      onChange={(e) => setC3PurchaseQtyInput(Number(e.target.value))}
+                                      className="w-full text-center border border-slate-300 rounded px-1.5 py-1 font-mono font-bold text-purple-900 bg-white"
+                                      id="field_purchase_qty_input"
+                                    />
+                                    {!sim3State.hasConfirmedOC && (
+                                      <span className="text-[8px] text-purple-700 block text-center mt-0.5">Ingresa exactamente <strong>250</strong></span>
+                                    )}
+                                  </td>
+                                  <td className="p-2.5 border-r border-slate-200 text-right font-mono text-slate-500">$80.00</td>
+                                  <td className="p-2.5 text-right font-mono font-bold text-slate-900">${c3PurchaseQtyInput * 80}.00</td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center bg-slate-50 p-2.5 rounded border border-slate-150-none bg-slate-100">
+                          <span className="text-slate-500 text-xs">Moneda del Documento: <strong>USD - Dólares Estadounidenses</strong></span>
+                          <span className="text-sm font-bold text-[#714B67] font-mono">Total de la Orden: ${(c3PurchaseQtyInput * 80).toLocaleString()} USD</span>
+                        </div>
+
+                        <div className="flex justify-end space-x-2 pt-2.5 border-t border-slate-100">
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setSimMenuSection("compras");
+                            }}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-1.5 rounded text-xs cursor-pointer font-bold"
+                          >
+                            Volver a Lista
+                          </button>
+
+                          {!sim3State.hasConfirmedOC && (
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                if (c3PurchaseQtyInput !== 250) {
+                                  triggerAlert(
+                                    "Cantidad Incorrecta",
+                                    "El tutor didáctico del caso de estudio requiere comprar exactamente un lote de '250' unidades de escritorios. Corrige el valor de la celda de Demanda."
+                                  );
+                                } else {
+                                  setSim3State({
+                                    ...sim3State,
+                                    step: 3,
+                                    purchaseQty: 250,
+                                    hasConfirmedOC: true
+                                  });
+                                  triggerAlert(
+                                    "Orden de Compra Confirmada",
+                                    "¡Excelente! SdC formalizada a Orden de Compra (OC-0001). Ahora el departamento de Compras ha completado su negociación comercial. Dirígete a la aplicación 'Inventario (Módulo de Recepción)' en la barra superior de Odoo para convalidar la entrada física el almacén."
+                                  );
+                                  setSimMenuSection("compras");
+                                }
+                              }}
+                              className="bg-[#714B67] hover:bg-[#5f3e56] text-white px-5 py-1.5 rounded font-bold text-xs cursor-pointer"
+                              id="btn_confirm_purchase_order"
+                            >
+                              Confirmar Orden de Compra
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CLASS 3: INVENTARIO (RECEPCIONES) LIST VIEW */}
+                  {simState.hasLoggedIn && simMenuSection === "inventario" && currentClass === 3 && (
+                    <div className="w-full bg-white rounded-xl border border-slate-200 shadow-md p-4 text-left text-xs" id="odoo_recepciones_list">
+                      <div className="border-b border-slate-200 pb-2 mb-3 flex justify-between items-center bg-slate-50 p-2 rounded">
+                        <span className="font-bold text-[#714B67] text-sm">Operaciones de Recepción de Mercancías (WMS Portal)</span>
+                      </div>
+
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left text-xs text-slate-700">
+                          <thead className="bg-[#714B67]/5 text-[#714B67] font-semibold">
+                            <tr>
+                              <th className="p-2.5">Código Recepción</th>
+                              <th className="p-2.5">Documento Origen</th>
+                              <th className="p-2.5">Proveedor Suministrador</th>
+                              <th className="p-2.5">Fecha Prevista</th>
+                              <th className="p-2.5 text-center">Estado del Vale</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {sim3State.hasConfirmedOC ? (
+                              <tr 
+                                onClick={() => setSimMenuSection("recepciones")}
+                                className="hover:bg-slate-50 transition-colors cursor-pointer"
+                              >
+                                <td className="p-2.5 font-mono font-bold text-purple-800">
+                                  WH/IN/0001
+                                </td>
+                                <td className="p-2.5 font-mono text-slate-500">OC-0001</td>
+                                <td className="p-2.5 text-slate-900 font-semibold">{sim3State.providerName}</td>
+                                <td className="p-2.5 text-slate-500 font-sans">Hoy (Inmediata)</td>
+                                <td className="p-2.5 text-center">
+                                  {sim3State.hasValidatedReceipt ? (
+                                    <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-emerald-100">Hecho / Completado</span>
+                                  ) : (
+                                    <span className="bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full text-[10px] font-semibold border border-amber-100">Listo para Recibir</span>
+                                  )}
+                                </td>
+                              </tr>
+                            ) : (
+                              <tr>
+                                <td colSpan={5} className="p-6 text-center text-slate-400 italic font-sans">No hay órdenes de recepción disponibles. Confirma primero la compra.</td>
+                              </tr>
+                            )}
+                          </tbody>
+                        </table>
+                      </div>
+
+                      {sim3State.step === 3 && (
+                        <div className="mt-4 bg-purple-50 border border-purple-200/50 p-3.5 rounded-xl flex items-start gap-2.5 animate-pulse">
+                          <MapPin className="w-4.5 h-4.5 text-purple-700 shrink-0 mt-0.5" />
+                          <div className="text-xs text-purple-950">
+                            <strong>Indicador Logístico (Paso 3):</strong> Selecciona la recepción <strong>WH/IN/0001</strong> superior en la tabla para simular los conteos físicos de la descarga.
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* CLASS 3: RECEPCION FORM VIEW */}
+                  {simState.hasLoggedIn && simMenuSection === "recepciones" && (
+                    <div className="w-full bg-white rounded-xl border border-slate-200 shadow-md p-4 text-left text-xs" id="odoo_recepcion_form">
+                      <div className="border-b border-slate-200 pb-2 mb-3 flex justify-between items-center">
+                        <div className="flex items-center space-x-1.5">
+                          <span className="font-bold text-slate-400">Recepción de Almacén</span>
+                          <span className="font-mono text-xs text-slate-900 font-bold bg-slate-100 px-2 py-0.5 rounded">WH/IN/0001</span>
+                        </div>
+                        <button 
+                          onClick={() => setSimMenuSection("inventario")}
+                          className="text-slate-400 hover:text-slate-700 font-bold"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      <div className="space-y-4 font-sans">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-slate-50 p-3 rounded text-slate-700 border border-slate-200">
+                          <div>
+                            <span className="block text-[9px] uppercase font-bold text-slate-400">Proveedor de mercancía</span>
+                            <span className="font-semibold text-slate-900">{sim3State.providerName}</span>
+                          </div>
+                          <div>
+                            <span className="block text-[9px] uppercase font-bold text-slate-400">Documento Inicial de Origen</span>
+                            <span className="font-semibold text-slate-900 font-mono">OC-0001</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-slate-700 font-bold mb-2">Comprobación física de descarga e inspección logístico</label>
+                          <div className="border border-slate-200 rounded-lg overflow-hidden">
+                            <table className="w-full text-left text-xs text-slate-700">
+                              <thead className="bg-[#714B67]/5 text-slate-800 font-semibold">
+                                <tr>
+                                  <th className="p-2 border-r border-slate-200">Producto</th>
+                                  <th className="p-2 border-r border-slate-200 text-center w-28">Demanda Inicial Esperada</th>
+                                  <th className="p-2 text-center w-36">Cantidad Recibida Real</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                <tr>
+                                  <td className="p-2.5 border-r border-slate-200 font-semibold text-slate-900 font-sans">
+                                    Escritorio de Madera Premium (SKU: MUE-ESC-001)
+                                  </td>
+                                  <td className="p-2 border-r border-slate-200 text-center font-mono font-bold text-slate-500">
+                                    250 uds
+                                  </td>
+                                  <td className="p-2">
+                                    <input 
+                                      type="number"
+                                      disabled={sim3State.hasValidatedReceipt}
+                                      value={c3ReceivedQtyInput}
+                                      onChange={(e) => setC3ReceivedQtyInput(Number(e.target.value))}
+                                      className="w-full text-center border border-slate-300 rounded px-1.5 py-1 font-mono font-bold text-emerald-800 bg-white"
+                                      id="field_received_qty_input"
+                                    />
+                                    {!sim3State.hasValidatedReceipt && (
+                                      <span className="text-[8px] text-emerald-700 block text-center mt-0.5">Debe ser exactamente <strong>250</strong></span>
+                                    )}
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end space-x-2 pt-2.5 border-t border-slate-100">
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setSimMenuSection("inventario");
+                            }}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-1.5 rounded text-xs cursor-pointer font-bold"
+                          >
+                            Volver
+                          </button>
+
+                          {!sim3State.hasValidatedReceipt && (
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                if (c3ReceivedQtyInput !== 250) {
+                                  triggerAlert(
+                                    "Discrepancia en Entrada",
+                                    "La demanda comercial de la OC requiere formalizar exactamente un lote de '250' unidades. Verifica que toda la mercancía recibida concuerda con lo comprado."
+                                  );
+                                } else {
+                                  setSim3State({
+                                    ...sim3State,
+                                    step: 4,
+                                    receivedQty: 250,
+                                    hasValidatedReceipt: true
+                                  });
+                                  triggerAlert(
+                                    "Recepción Validada con Éxito",
+                                    "¡Perfecto! Los conteos concuerdan y la recepción de 250 escritorios ha sido convalidada. Se ha generado el asiento de almacén y las existencias han aumentado a 250 unidades. El paso final es ir a Reportes u Operaciones para validar los stocks."
+                                  );
+                                  setSimMenuSection("inventario");
+                                }
+                              }}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-1.5 rounded font-bold text-xs cursor-pointer"
+                              id="btn_validate_receipt"
+                            >
+                              Validar Entrada Física (WMS)
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CLASS 2: AJUSTE DE STOCK VIEW */}
+                  {simState.hasLoggedIn && simMenuSection === "inventario_ajuste" && (
+                    <div className="w-full bg-white rounded-xl border border-slate-200 shadow-md p-4 text-left text-xs" id="odoo_adjustment2">
+                      <div className="border-b border-slate-200 pb-2 mb-3 flex justify-between items-center bg-slate-50 p-2 rounded">
+                        <span className="font-bold text-[#714B67] text-sm font-sans">Herramienta de Auditoría y Ajuste Físico de Existencias</span>
+                      </div>
+
+                      <div className="space-y-4 font-sans">
+                        <div className="bg-amber-50 rounded-lg p-3 border border-amber-200/50 text-amber-950 text-xs">
+                          <strong>Caso de Auditoría Logística (Paso 2):</strong> Se ha realizado un conteo físico manual en las estanterías de <strong>Pasillo A</strong> y se detectó que hay <strong>50 escritorios</strong>, lo cual contradice el valor teórico de 0 en el sistema de Odoo. Corrige la celda.
+                        </div>
+
+                        <div className="border border-slate-200 rounded-lg overflow-hidden">
+                          <table className="w-full text-left text-xs text-slate-700">
+                            <thead className="bg-[#714B67]/5 text-slate-800 font-semibold">
+                              <tr>
+                                  <th className="p-2 border-r border-slate-200">Producto</th>
+                                  <th className="p-2 border-r border-slate-200">Ubicación Física</th>
+                                  <th className="p-2 border-r border-slate-200 text-center w-28">Cant. Teórica</th>
+                                  <th className="p-2 text-center w-36">Cant. Contada (Real Físico)</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td className="p-2.5 border-r border-slate-200 font-bold text-slate-900">
+                                  Escritorio de Madera Premium
+                                </td>
+                                <td className="p-2.5 border-r border-slate-200 text-slate-500 font-mono">
+                                  AC/Stock/Pasillo A
+                                </td>
+                                <td className="p-2/5 border-r border-slate-200 text-center font-mono text-slate-650">
+                                  0 uds
+                                </td>
+                                <td className="p-2">
+                                  <input 
+                                    type="number"
+                                    disabled={sim2State.adjustmentApplied}
+                                    value={c2AjusteRealCountInput}
+                                    onChange={(e) => setC2AjusteRealCountInput(Number(e.target.value))}
+                                    className="w-full text-center border border-slate-300 rounded px-2 py-1 font-mono font-bold text-purple-900 bg-white"
+                                    id="field_audit_qty_input"
+                                  />
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+
+                        <div className="flex justify-end space-x-2 pt-2 border-t border-slate-100 font-sans">
+                          <button 
+                            type="button"
+                            onClick={() => setSimMenuSection("dashboard")}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded font-bold cursor-pointer"
+                          >
+                            Volver al Dashboard
+                          </button>
+                          {!sim2State.adjustmentApplied && (
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                if (c2AjusteRealCountInput !== 50) {
+                                  triggerAlert(
+                                    "Discrepancia en Ajuste",
+                                    "El conteo físico de escritorios en la estantería es de exactamente '50' unidades según la guía didáctica del tutor. Corrige el valor."
+                                  );
+                                } else {
+                                  setSim2State({
+                                    ...sim2State,
+                                    step: 3,
+                                    onHandQuantity: 50,
+                                    adjustmentApplied: true
+                                  });
+                                  triggerAlert(
+                                    "Ajuste Convalidado",
+                                    "¡Excelente! Conteo físico de 50 escritorios convalidado en Odoo. La cantidad teórica inicial ha quedado conciliada en 50 unidades. Dirígete ahora a la aplicación 'Desechar Mermas' para dar de baja las unidades rotas."
+                                  );
+                                  setSimMenuSection("dashboard");
+                                }
+                              }}
+                              className="bg-[#714B67] hover:bg-[#5f3e56] text-white px-5 py-1.5 rounded font-bold cursor-pointer"
+                              id="btn_apply_stock_adjustment"
+                            >
+                              Aplicar Ajuste Físico
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CLASS 2: DESECHOS / MERMAS VIEW */}
+                  {simState.hasLoggedIn && simMenuSection === "inventario_mermas" && (
+                    <div className="w-full bg-white rounded-xl border border-slate-200 shadow-md p-4 text-left text-xs" id="odoo_scrap2">
+                      <div className="border-b border-slate-200 pb-2 mb-3 flex justify-between items-center bg-slate-50 p-2 rounded">
+                        <span className="font-bold text-[#714B67] text-sm font-sans">Órdenes de Desecho, Merma y Ajustes Destructivos</span>
+                      </div>
+
+                      <div className="space-y-4 font-sans">
+                        <div className="bg-red-50 p-3 rounded-lg border border-red-200/50 text-red-950 text-xs">
+                          <strong>Caso de Merma (Paso 3):</strong> Durante la descarga, se descubrieron <strong>2 escritorios rotos por humedad</strong>. Para evitar el desorden operativo o despachar productos dañados, el operador los descarta en la ubicación virtual de desperdicio.
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 bg-slate-50 p-3 rounded border border-slate-200">
+                          <div>
+                            <span className="block text-[9px] uppercase font-bold text-slate-500">Producto</span>
+                            <span className="text-xs font-bold text-slate-850">Escritorio de Madera Premium</span>
+                          </div>
+                          <div>
+                            <span className="block text-[9px] uppercase font-bold text-slate-500">Silo de Existencia Actual</span>
+                            <span className="text-xs font-semibold text-slate-750">{sim2State.onHandQuantity} unidades de madera</span>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-slate-600 font-bold mb-1 col-span-1">Cantidad a Dar de Baja (Desechar) <strong className="text-red-500">*</strong></label>
+                            <input 
+                              type="number"
+                              disabled={sim2State.step >= 4}
+                              value={c2MermaQtyInput}
+                              onChange={(e) => setC2MermaQtyInput(Number(e.target.value))}
+                              className="w-full border border-slate-300 rounded px-2.5 py-1.5 font-mono font-bold text-red-900 bg-white"
+                              id="field_scrap_qty"
+                            />
+                            {sim2State.step < 4 && (
+                              <span className="text-[9px] text-red-650 mt-1 block">Debes dar de baja exactamente <strong>2</strong> unidades rotas.</span>
+                            )}
+                          </div>
+                          <div>
+                            <label className="block text-slate-600 font-bold mb-1">Ubicación Virtual de Desperdicio</label>
+                            <input 
+                              type="text"
+                              disabled
+                              value="Virtual Locations/Scrap (Pérdidas)"
+                              className="w-full border border-slate-200 rounded px-2.5 py-1.5 bg-slate-50 text-slate-500 cursor-not-allowed"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end space-x-2 pt-2 border-t border-slate-100 font-sans">
+                          <button 
+                            type="button"
+                            onClick={() => setSimMenuSection("dashboard")}
+                            className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-1.5 rounded font-bold cursor-pointer"
+                          >
+                            Volver
+                          </button>
+                          {sim2State.step < 4 && (
+                            <button 
+                              type="button"
+                              onClick={() => {
+                                if (c2MermaQtyInput !== 2) {
+                                  triggerAlert(
+                                    "Merma Incorrecta",
+                                    "El caso logístico indica dar de baja exactamente '2' unidades debido a rotura irreparable."
+                                  );
+                                } else {
+                                  setSim2State({
+                                    ...sim2State,
+                                    step: 4,
+                                    onHandQuantity: 48
+                                  });
+                                  triggerAlert(
+                                    "Merma Registrada con Éxito",
+                                    "¡Perfecto! Se han dado de baja 2 escritorios por merma técnica de almacén. El nivel de stock de sistema para Escritorio de Madera se reduce a 48 unidades. Dirígete a la pestaña 'Reportes de Odoo' para consolidar la práctica."
+                                  );
+                                  setSimMenuSection("dashboard");
+                                }
+                              }}
+                              className="bg-red-600 hover:bg-red-700 text-white px-5 py-1.5 rounded font-bold cursor-pointer"
+                              id="btn_save_scrap"
+                            >
+                              Desechar Mercancía Rota
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CLASS 2: INVENTARIO REPORTE VIEW */}
+                  {simState.hasLoggedIn && simMenuSection === "inventario_reporte" && (
+                    <div className="w-full bg-white rounded-xl border border-slate-200 shadow-md p-4 text-left text-xs" id="odoo_reporte2">
+                      <div className="border-b border-slate-200 pb-2 mb-3 flex justify-between items-center bg-slate-50 p-2 rounded">
+                        <span className="font-bold text-[#714B67] text-sm">Reporte Ejecutivo de Valor de Inventario y Existencias</span>
+                      </div>
+
+                      <div className="space-y-4 font-sans">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div className="bg-slate-50 border border-slate-200 p-3 rounded-lg text-center">
+                            <span className="block text-[10px] text-slate-400 font-bold uppercase">Stock Físico Real</span>
+                            <span className="text-xl font-bold font-mono text-[#714B67]">{sim2State.onHandQuantity} uds</span>
+                            <span className="text-[9px] text-slate-500 block font-sans">Ubicado en Pasillo A</span>
+                          </div>
+                          <div className="bg-slate-50 border border-slate-200 p-3 rounded-lg text-center">
+                            <span className="block text-[10px] text-slate-400 font-bold uppercase font-sans">Valor total de activos</span>
+                            <span className="text-xl font-bold font-mono text-slate-900">${sim2State.onHandQuantity * 80}.00 USD</span>
+                            <span className="text-[9px] text-slate-500 block font-sans">Costo unitario de $80</span>
+                          </div>
+                          <div className="bg-slate-50 border border-slate-200 p-3 rounded-lg text-center">
+                            <span className="block text-[10px] text-slate-400 font-bold uppercase font-sans">Mermas dadas de baja</span>
+                            <span className="text-xl font-bold font-mono text-red-700">2 uds</span>
+                            <span className="text-[9px] text-slate-500 block font-sans">Roturas irreparables</span>
+                          </div>
+                        </div>
+
+                        <div className="bg-slate-50 p-3.5 rounded-lg border border-slate-200">
+                          <h6 className="font-bold text-[#714B67] mb-1.5 font-sans">Conclusiones de la Auditoría Técnica:</h6>
+                          <p className="text-slate-650 leading-normal text-xs font-sans">
+                            Se convalidó la correspondencia entre los saldos documentales y físicos. El sistema reporta un inventario óptimo de <strong>{sim2State.onHandQuantity} escritorios terminados</strong> en el almacenamiento, listos para labores de exportación y despacho, y con un nivel de pérdida de merma del 4%.
+                          </p>
+                        </div>
+
+                        <div className="flex justify-end space-x-2 pt-2 border-t border-slate-100 font-sans">
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              setSim2State({
+                                ...sim2State,
+                                step: 5
+                              });
+                              triggerAlert(
+                                "Reporte Consolidado",
+                                "¡Felicitaciones! Reporte consolidado y práctica culminada. Pulsa en Volver para visualizar las animaciones y convalidar las insignias de clase."
+                              );
+                              setSimMenuSection("dashboard");
+                            }}
+                            className="bg-[#714B67] hover:bg-[#5f3e56] text-white px-5 py-2 rounded font-bold cursor-pointer text-xs"
+                            id="btn_complete_class2_practice"
+                          >
+                            Consolidar y Finalizar Práctica
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   )}
 
