@@ -1605,7 +1605,7 @@ export default function App() {
                             {pIdx + 1}
                           </span>
                           <span className="text-slate-300 text-sm leading-relaxed">
-                            {parts.map((p, pSubIdx) => pSubIdx % 2 === 1 ? <strong key={pSubIdx} className="text-purple-300 font-semibold">{p}</strong> : p)}
+                            {parts.map((p, pSubIdx) => pSubIdx % 2 === 1 ? <strong key={pSubIdx} className="text-purple-300 font-semibold">{p}</strong> : <span key={pSubIdx}>{p}</span>)}
                           </span>
                         </div>
                       );
@@ -1695,7 +1695,7 @@ export default function App() {
                           ) : (
                             <div className="mt-3 bg-slate-800/40 p-3 rounded-lg border border-slate-700/30 text-xs text-slate-300 leading-relaxed" id={`quiz_resp_exp_${q.id}`}>
                               <strong className="text-purple-400 block mb-1">Explicación técnica:</strong>
-                              {q.explanation}
+                              <span className="block mt-1">{q.explanation}</span>
                             </div>
                           )}
                         </div>
@@ -4327,7 +4327,7 @@ export default function App() {
                                     return (
                                       <li key={lIdx}>
                                         {boldFormatted.map((textPart, idxPart) => 
-                                          idxPart % 2 === 1 ? <strong key={idxPart} className={isModel ? "text-purple-300 font-bold" : "text-white font-bold"}>{textPart}</strong> : textPart
+                                          idxPart % 2 === 1 ? <strong key={idxPart} className={isModel ? "text-purple-300 font-bold" : "text-white font-bold"}>{textPart}</strong> : <span key={idxPart}>{textPart}</span>
                                         )}
                                       </li>
                                     );
@@ -4341,7 +4341,7 @@ export default function App() {
                             return (
                               <p key={pIdx} className="leading-relaxed">
                                 {lineSegments.map((textPart, idxPart) => 
-                                  idxPart % 2 === 1 ? <strong key={idxPart} className={isModel ? "text-purple-300 font-bold" : "text-white font-bold"}>{textPart}</strong> : textPart
+                                  idxPart % 2 === 1 ? <strong key={idxPart} className={isModel ? "text-purple-300 font-bold" : "text-white font-bold"}>{textPart}</strong> : <span key={idxPart}>{textPart}</span>
                                 )}
                               </p>
                             );
