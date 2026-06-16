@@ -1616,10 +1616,12 @@ export default function App() {
                         <div key={q.id} className="bg-slate-900/40 border border-slate-800 rounded-xl p-4 relative" id={`quiz_container_${q.id}`}>
                           <div className="flex justify-between items-center mb-1">
                             <span className="text-xs font-mono text-slate-500 uppercase">Pregunta {qIndex + 1} de {currentLesson.quiz.length}</span>
-                            {isSubmitted && (
-                              <span className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${isCorrect ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/15 text-red-400 border border-red-500/20'}`}>
+                            {isSubmitted ? (
+                              <span key={`correct_label_${q.id}`} className={`text-xs px-2.5 py-0.5 rounded-full font-semibold ${isCorrect ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/15 text-red-400 border border-red-500/20'}`}>
                                 {isCorrect ? "¡Correcto!" : "Incorrecto"}
                               </span>
+                            ) : (
+                              <span key={`pending_label_${q.id}`} className="hidden"></span>
                             )}
                           </div>
                           
@@ -1661,7 +1663,7 @@ export default function App() {
 
                           {/* Action Button for checking */}
                           {!isSubmitted ? (
-                            <div className="mt-3 flex justify-end">
+                            <div key={`submit_action_${q.id}`} className="mt-3 flex justify-end">
                               <button
                                 type="button"
                                 disabled={selectedOptionAndStored === undefined}
@@ -1670,14 +1672,14 @@ export default function App() {
                                   selectedOptionAndStored !== undefined
                                     ? "bg-emerald-600 text-white hover:bg-emerald-500 shadow-md cursor-pointer"
                                     : "bg-slate-800 text-slate-500 cursor-not-allowed"
-                                }`}
+                                  }`}
                                 id={`quiz_submit_btn_${q.id}`}
                               >
                                 Comprobar Respuesta
                               </button>
                             </div>
                           ) : (
-                            <div className="mt-3 bg-slate-800/40 p-3 rounded-lg border border-slate-700/30 text-xs text-slate-300 leading-relaxed" id={`quiz_resp_exp_${q.id}`}>
+                            <div key={`explanation_action_${q.id}`} className="mt-3 bg-slate-800/40 p-3 rounded-lg border border-slate-700/30 text-xs text-slate-300 leading-relaxed" id={`quiz_resp_exp_${q.id}`}>
                               <strong className="text-purple-400 block mb-1">Explicación técnica:</strong>
                               <span className="block mt-1">{q.explanation}</span>
                             </div>
