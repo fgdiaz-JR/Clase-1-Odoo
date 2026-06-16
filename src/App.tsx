@@ -1569,11 +1569,19 @@ export default function App() {
                       <div className="space-y-1">
                         <span className="font-bold text-slate-200 block">Reporte Pedagógico del Tutor:</span>
                         <p className="leading-relaxed text-slate-400">
-                          {quizPassedCount === totalQuizzesCount && "¡Excelente trabajo! Has logrado una calificación perfecta. Demuestras un dominio absoluto de la terminología de Odoo WMS y los flujos logísticos básicos de almacenes."}
-                          {quizPassedCount < totalQuizzesCount && quizPassedCount >= 10 && "¡Excelente desempeño logístico! Tienes muy claros los conceptos clave de almacenes, ubicaciones de partida doble y productos almacenables. Sigue así."}
-                          {quizPassedCount < 10 && quizPassedCount >= 6 && "¡Aprobado con buen puntaje! Dominas los conceptos fundamentales, aunque te recomendamos repasar los temas de ubicaciones de vista y mermas virtuales para perfeccionar."}
-                          {quizPassedCount < 6 && quizPassedCount > 0 && "Estás en proceso de aprendizaje. Continúa respondiendo las pruebas de conocimiento de cada tema para subir tu promedio y desbloquear el Certificado Oficial."}
-                          {quizPassedCount === 0 && "Aún no has iniciado tus pruebas de conocimiento. Haz clic en los temas de arriba, lee los conceptos clave y resuelve el 'Mini-Quiz' al final de cada tema para ver tu progreso."}
+                          {(() => {
+                            if (quizPassedCount === totalQuizzesCount) {
+                              return "¡Excelente trabajo! Has logrado una calificación perfecta. Demuestras un dominio absoluto de la terminología de Odoo WMS y los flujos logísticos básicos de almacenes.";
+                            } else if (quizPassedCount >= 10) {
+                              return "¡Excelente desempeño logístico! Tienes muy claros los conceptos clave de almacenes, ubicaciones de partida doble y productos almacenables. Sigue así.";
+                            } else if (quizPassedCount >= 6) {
+                              return "¡Aprobado con buen puntaje! Dominas los conceptos fundamentales, aunque te recomendamos repasar los temas de ubicaciones de vista y mermas virtuales para perfeccionar.";
+                            } else if (quizPassedCount > 0) {
+                              return "Estás en proceso de aprendizaje. Continúa respondiendo las pruebas de conocimiento de cada tema para subir tu promedio y desbloquear el Certificado Oficial.";
+                            } else {
+                              return "Aún no has iniciado tus pruebas de conocimiento. Haz clic en los temas de arriba, lee los conceptos clave y resuelve el 'Mini-Quiz' al final de cada tema para ver tu progreso.";
+                            }
+                          })()}
                         </p>
                       </div>
                     </div>
